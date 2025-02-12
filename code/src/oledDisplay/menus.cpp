@@ -9,7 +9,6 @@ void initWeatherMenu()
 
 void checkExit()
 {
-    static bool exitHeld = false;
     buttons.checkConfirm();
 
     if (buttons.checkExit())
@@ -289,7 +288,9 @@ void generalDebugMenu()
 
 void touchDebugMenu()
 {
+    Serial.println("checking Exit");
     checkExit();
+    Serial.println(" finished checking Exit");
     display.clearDisplay();
     centerText("Touch Debug ", 10);
     display.drawRect(0, SCREEN_HEIGHT / 3 - 8, SCREEN_WIDTH, 2, SSD1306_WHITE);
@@ -305,6 +306,8 @@ void touchDebugMenu()
     display.setCursor(0, 63);
     display.println("Fourth Segment " + String(touchRead(TOUCH_5_SEGMENT_PIN)));
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
+    Serial.println("Starting Display");
     manager.oledDisplay();
+    Serial.println("Finished Display");
     delay(10);
 }

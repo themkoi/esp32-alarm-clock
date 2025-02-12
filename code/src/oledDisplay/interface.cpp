@@ -234,13 +234,17 @@ void runLoopFunction(void (*loopFunction)())
 
     while (true)
     {
+        Serial.println("running loopfunction");
         loopFunction();
+        Serial.println("finished loopfunction");
 
+        Serial.println("checking buttons?");
         // Check for any button press (low when pressed)
         if (buttons.checkButtonInput())
         {
             lastInputTime = millis();
         }
+        Serial.println("checked buttons");
 
         if (millis() - lastInputTime > LOOP_FUNCTION_TIMEOUT_MS || exitLoopFunction == true)
         {

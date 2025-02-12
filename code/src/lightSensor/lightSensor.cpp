@@ -111,11 +111,11 @@ void dimmingFunction(void *pvParameters)
                 dimmed = false;
             }
 
-            vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(100));
             while (millis() - lastActionTime < DIM_DELAY)
             {
 
-                vTaskDelay(10);
+                vTaskDelay(pdMS_TO_TICKS(100));
                 if (buttons.checkInput() == true)
                 {
                     lastActionTime = millis();
@@ -128,7 +128,7 @@ void dimmingFunction(void *pvParameters)
                     {
                         manager.oledEnable();
                     }
-                    vTaskDelay(10);
+                    vTaskDelay(pdMS_TO_TICKS(100));
                     while (buttons.checkInput() == true)
                     {
                         lastActionTime = millis();
