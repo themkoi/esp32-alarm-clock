@@ -497,5 +497,4 @@ void showScreensaver()
         qsort(flyer, N_FLYERS, sizeof(struct Flyer), compare);
     }
     manager.oledDisplay();
-    delay(15);
 }
