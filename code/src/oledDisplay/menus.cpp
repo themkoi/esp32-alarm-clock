@@ -286,3 +286,25 @@ void generalDebugMenu()
     manager.oledDisplay();
     delay(10);
 }
+
+void touchDebugMenu()
+{
+    checkExit();
+    display.clearDisplay();
+    centerText("Touch Debug ", 10);
+    display.drawRect(0, SCREEN_HEIGHT / 3 - 8, SCREEN_WIDTH, 2, SSD1306_WHITE);
+    display.setFont(&DejaVu_LGC_Sans_Bold_9);
+    display.setCursor(0, 23);
+    display.println("First Segment " + String(touchRead(TOUCH_1_SEGMENT_PIN)));
+    display.setCursor(0, 33);
+    display.println("Second Segment " + String(touchRead(TOUCH_2_SEGMENT_PIN)));
+    display.setCursor(0, 43);
+    display.println("Third Segment " + String(touchRead(TOUCH_3_SEGMENT_PIN)));
+    display.setCursor(0, 53);
+    display.println("Fourth Segment " + String(touchRead(TOUCH_4_SEGMENT_PIN)));
+    display.setCursor(0, 63);
+    display.println("Fourth Segment " + String(touchRead(TOUCH_5_SEGMENT_PIN)));
+    display.setFont(&DejaVu_LGC_Sans_Bold_10);
+    manager.oledDisplay();
+    delay(10);
+}

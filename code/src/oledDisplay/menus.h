@@ -15,5 +15,6 @@ void currentWeatherMenu();
 void wifiDebugMenu();
 void CPUDebugMenu();
 void generalDebugMenu();
+void touchDebugMenu();
 void fpsCalc();
 #endif

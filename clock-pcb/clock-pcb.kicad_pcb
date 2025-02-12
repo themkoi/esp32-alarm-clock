@@ -3007,13 +3007,13 @@
 		)
 		(model "${KIPRJMOD}/3D/LED Display.step"
 			(offset
-				(xyz 7 21 -27.5)
+				(xyz -66 -21 -25.5)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz 90 0 0)
+				(xyz 90 0 180)
 			)
 		)
 	)
@@ -11246,7 +11246,7 @@
 		(zone
 			(net 0)
 			(net_name "")
-			(layers "*.Cu")
+			(layers "F&B.Cu")
 			(uuid "e55d2306-2d5c-4892-9733-93f685720e60")
 			(name "antenna keepout")
 			(hatch edge 0.508)

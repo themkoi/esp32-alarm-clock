@@ -1269,7 +1269,7 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "top-board.step",
       "svg": "",
       "vrml": ""
     },

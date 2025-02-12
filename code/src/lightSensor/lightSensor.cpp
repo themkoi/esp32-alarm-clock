@@ -81,7 +81,6 @@ void dimmingFunction(void *pvParameters)
                 dimOledDisplay();
                 maxBrightness = false;
 
-                Serial.println("touch level: " + String(touchRead(TOUCH_BUTTON_PIN)));
 
                 Serial.println("Reading brightness and dimming oled accordingly: " + String(lightLevel));
                 previousMillisDimming = currentMillis;
@@ -98,7 +97,6 @@ void dimmingFunction(void *pvParameters)
         if (checkPower() == true)
         {
             Serial.println("Button pressed");
-            Serial.println("touch level: " + String(touchRead(TOUCH_BUTTON_PIN)));
 
             Serial.println("setting max brightness");
             vTaskDelay(pdMS_TO_TICKS(20));
@@ -262,10 +260,28 @@ bool checkForNight()
 int getLightState()
 {
     String url = "http://192.168.88.74/gateways/4276/RGB/0";
-    String jsonString = getStringRequest(url);
-    if (jsonString == "")
+    String jsonString;
+    const int maxRetries = 3;
+
+    for (int attempt = 0; attempt < maxRetries; ++attempt)
     {
-        return 3;
+        jsonString = getStringRequest(url);
+
+        if (jsonString.length() > 0)
+        {
+            break; // Exit the loop if we get a valid response
+        }
+        else
+        {
+            Serial.println("Failed to fetch data, retrying...");
+            delay(1000); // Wait 1 second before retrying
+        }
+    }
+
+    if (jsonString.length() == 0)
+    {
+        Serial.println("Failed to fetch data after multiple attempts.");
+        return 3; // Return an error code if all retries fail
     }
 
     JsonDocument jsonDoc;
@@ -275,16 +291,17 @@ int getLightState()
     {
         Serial.print("deserializeJson() returned ");
         Serial.println(error.c_str());
-        return 3; // Return false if deserialization fails
+        return 3; // Return error code if deserialization fails
     }
 
     const char *state = jsonDoc["state"]; // Extract the state field
 
     if (state != nullptr && strcmp(state, "ON") == 0)
     {
-        Serial.println("Ligh is ON");
+        Serial.println("Light is ON");
         return 1;
     }
-    Serial.println("Ligh is OFF");
+
+    Serial.println("Light is OFF");
     return 0;
 }

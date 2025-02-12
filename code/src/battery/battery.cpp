@@ -265,7 +265,12 @@ void initSleep()
 
   esp_sleep_enable_timer_wakeup(SLEEPING_TIME);
 
-  touchSleepWakeUpEnable(TOUCH_BUTTON_PIN, TOUCH_BUTTON_THRESHOLD);
+  touchSleepWakeUpEnable(TOUCH_1_SEGMENT_PIN, TOUCH_1_SEGMENT_THRESHOLD);
+  touchSleepWakeUpEnable(TOUCH_2_SEGMENT_PIN, TOUCH_2_SEGMENT_THRESHOLD);
+  touchSleepWakeUpEnable(TOUCH_3_SEGMENT_PIN, TOUCH_3_SEGMENT_THRESHOLD);
+  touchSleepWakeUpEnable(TOUCH_4_SEGMENT_PIN, TOUCH_4_SEGMENT_THRESHOLD);
+  touchSleepWakeUpEnable(TOUCH_5_SEGMENT_PIN, TOUCH_5_SEGMENT_THRESHOLD);
+
 
   esp_sleep_enable_touchpad_wakeup();
   initializedSleep = true;

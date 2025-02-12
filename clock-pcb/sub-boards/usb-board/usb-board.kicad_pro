@@ -1267,7 +1267,7 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "usb-board.step",
       "svg": "",
       "vrml": ""
     },

@@ -33,38 +33,82 @@ bool displayedWeather = false;
 unsigned long previousMillisFirstMenu = 0; // Store the last time the display was updated
 const long intervalFirstMenu = 1000;       // Interval at which to run the code (15 seconds)
 
-bool previousInputState = false;
-bool currentInputState = false;
 bool isBeingHeld = false;
+bool currentInputState = false;
+bool previousInputState = false;
+
+void checkTouchButtons()
+{
+    if (buttons.checkFirstSegment() || buttons.checkSecondSegment())
+    {
+        cyclePagesDown();
+    }
+    else if (buttons.checkThirdSegment())
+    {
+        cyclePages();
+    }
+    else if (buttons.checkFourthSegment() || buttons.checkFifthSegment())
+    {
+        cyclePagesUp();
+    }
+}
+
+unsigned long lastTouchTime = 0; // Time of last touch
 
 void showMainPage()
 {
-    if (buttons.checkTouch() && !isBeingHeld)
+    unsigned long debounceDelay = 500;
+    bool anyTouch = buttons.checkTouch();
+    static bool initialTouchDetected = false; // Track if initial touch has been detected
+
+    if (anyTouch && !isBeingHeld && (millis() - lastTouchTime > debounceDelay))
     {
-        // Touch initially pressed
-        if (touchRead(TOUCH_BUTTON_PIN) < TOUCH_BUTTON_THRESHOLD)
+        currentInputState = true;
+        isBeingHeld = true;
+        Serial.println("Touch Detected");
+        lastTouchTime = millis();
+
+        // Only execute these functions when the touch is initially pressed
+        if (!initialTouchDetected)
         {
-            currentInputState = true;
-            isBeingHeld = true;
-            Serial.println("Held");
+            turnOffScreensaver();
+            checkTouchButtons();
+            initialTouchDetected = true; // Mark initial touch as detected
         }
     }
 
-    if (isBeingHeld)
+    if (isBeingHeld && !anyTouch)
     {
-        // Check if touch is still being held
-        if (touchRead(TOUCH_BUTTON_PIN) >= TOUCH_BUTTON_THRESHOLD)
+        currentInputState = false;
+        isBeingHeld = false;
+        Serial.println("Touch Released");
+
+        // Reset the initial touch detection flag when touch is released
+        initialTouchDetected = false;
+    }
+
+    // Check touchRead only when the touch is pressed, but don't execute the functions while holding
+    if (currentInputState && !previousInputState)
+    {
+        // Check each touch pin
+        bool touchActive = false;
+
+        touchActive |= (touchRead(TOUCH_1_SEGMENT_PIN) < TOUCH_1_SEGMENT_THRESHOLD);
+        touchActive |= (touchRead(TOUCH_2_SEGMENT_PIN) < TOUCH_2_SEGMENT_THRESHOLD);
+        touchActive |= (touchRead(TOUCH_3_SEGMENT_PIN) < TOUCH_3_SEGMENT_THRESHOLD);
+        touchActive |= (touchRead(TOUCH_4_SEGMENT_PIN) < TOUCH_4_SEGMENT_THRESHOLD);
+        touchActive |= (touchRead(TOUCH_5_SEGMENT_PIN) < TOUCH_5_SEGMENT_THRESHOLD);
+
+        if (touchActive)
         {
-            currentInputState = false;
-            isBeingHeld = false;
-            Serial.println("Released");
+            // If touch is still active (being held), do nothing
+            return;
         }
+
+        // If touch is released, reset the initial touch detection flag
+        initialTouchDetected = false;
     }
-    if (currentInputState == true && previousInputState == false)
-    {
-        turnOffScreensaver();
-    }
-    previousInputState = currentInputState;
+
     unsigned long currentTime = millis();
     if (PageNumberToShow == 1 || PageNumberToShow == 2 || PageNumberToShow == 3 || PageNumberToShow == 4 || PageNumberToShow == 5)
     {
@@ -143,7 +187,6 @@ void showMainPage()
 
 void turnOffScreensaver()
 {
-    cyclePages();
     displayedWeather = false;
     if (LastPageShown != 1)
     {
@@ -329,6 +372,56 @@ void cyclePages()
     else if (LastPageShown == 5)
     {
         PageNumberToShow = 1;
+    }
+}
+
+void cyclePagesDown()
+{
+    manager.stopScrolling();
+    if (LastPageShown == 1)
+    {
+        PageNumberToShow = 2;
+    }
+    else if (LastPageShown == 2)
+    {
+        PageNumberToShow = 3;
+    }
+    else if (LastPageShown == 3)
+    {
+        PageNumberToShow = 4;
+    }
+    else if (LastPageShown == 4)
+    {
+        PageNumberToShow = 5;
+    }
+    else if (LastPageShown == 5)
+    {
+        PageNumberToShow = 1;
+    }
+}
+
+void cyclePagesUp()
+{
+    manager.stopScrolling();
+    if (LastPageShown == 1)
+    {
+        PageNumberToShow = 5;
+    }
+    else if (LastPageShown == 2)
+    {
+        PageNumberToShow = 1;
+    }
+    else if (LastPageShown == 3)
+    {
+        PageNumberToShow = 2;
+    }
+    else if (LastPageShown == 4)
+    {
+        PageNumberToShow = 3;
+    }
+    else if (LastPageShown == 5)
+    {
+        PageNumberToShow = 4;
     }
 }
 

@@ -57,9 +57,8 @@ void resetPreviousItems()
     display.clearDisplay();
 }
 
-void showMenu()
+void showMenu() // please implement eventgroups later so it works better because the current way is very flawed and wastes time
 {
-    manager.stopScrolling();
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     display.clearDisplay();
     display.setTextSize(data.textSize);
@@ -106,7 +105,6 @@ void showMenu()
     }
 
     manager.oledDisplay();
-    while (manager.finishedDisplaying == false);
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     display.setTextColor(SSD1306_WHITE);
 }
@@ -631,6 +629,7 @@ void manageAlarms()
         drawBitmapOption(SCREEN_WIDTH - 30, 20, currentState == 5, isEditing && currentState == 5);
 
         manager.oledDisplay();
+
     }
 
     if (!isEditing)
@@ -782,15 +781,16 @@ void initMenus()
     // Initialize main menu buttons
     entryMenu chartButton = {"Charts", nullptr, nullptr, chartSubmenu, nullptr};
 
-    entryMenu *debugItems = new entryMenu[5]{
+    entryMenu *debugItems = new entryMenu[6]{
         {"General Debug", nullptr, generalDebugMenu, nullptr, nullptr},
         {"Cpu Debug", nullptr, CPUDebugMenu, nullptr, nullptr},
         {"WiFi Debug", nullptr, wifiDebugMenu, nullptr, nullptr},
+        {"Touch Debug", nullptr, touchDebugMenu, nullptr, nullptr},
         {"FPS calc", nullptr, fpsCalc, nullptr, nullptr},
         {"Upload OTA", startOTA, nullptr, nullptr, nullptr},
     };
 
-    Submenu *debugSubmenu = new Submenu{"Debug", debugItems, 5, 5};
+    Submenu *debugSubmenu = new Submenu{"Debug", debugItems, 6, 6};
 
     // Initialize main menu buttons
     entryMenu debugButton = {"Debug", nullptr, nullptr, debugSubmenu, nullptr};
