@@ -11,7 +11,7 @@ void checkExit()
 {
     buttons.checkConfirm();
 
-    if (buttons.checkExit())
+    if (shouldExitLoop() == true)
     {
         manager.stopScrolling();
         displayed = false;

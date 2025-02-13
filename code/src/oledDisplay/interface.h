@@ -9,6 +9,8 @@ void showMenu();
 
 void addNewAlarm();
 
+bool shouldExitLoop();
+
 extern bool menuRunning;
 extern bool idleEnabled;
 extern bool exitLoopFunction;

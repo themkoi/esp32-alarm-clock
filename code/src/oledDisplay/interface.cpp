@@ -227,6 +227,23 @@ void pushSubmenu(Submenu *submenu)
     }
 }
 
+bool shouldExitLoop()
+{
+    if (buttons.checkButtonInput())
+    {
+        lastInputTime = millis();
+    }
+
+    if (millis() - lastInputTime > LOOP_FUNCTION_TIMEOUT_MS || exitLoopFunction == true || buttons.checkExit())
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 void runLoopFunction(void (*loopFunction)())
 {
     unsigned long lastInputTime = millis();
@@ -234,19 +251,9 @@ void runLoopFunction(void (*loopFunction)())
 
     while (true)
     {
-        Serial.println("running loopfunction");
         loopFunction();
-        Serial.println("finished loopfunction");
 
-        Serial.println("checking buttons?");
-        // Check for any button press (low when pressed)
-        if (buttons.checkButtonInput())
-        {
-            lastInputTime = millis();
-        }
-        Serial.println("checked buttons");
-
-        if (millis() - lastInputTime > LOOP_FUNCTION_TIMEOUT_MS || exitLoopFunction == true)
+        if (exitLoopFunction == true)
         {
             break;
         }
@@ -544,6 +551,14 @@ void manageAlarms()
     uint8_t alarmIndex = alarmsSubmenu->entries[data.currentButton].text.toInt();
     static bool isEditing = false;
 
+    if (shouldExitLoop() == true)
+    {
+        AlarmMenuUpdate = true;
+        exitLoopFunction = true;
+        AlarmMenuUpdate = true;
+        editCurrentMenuEntry(String(alarmIndex) + " " + String(alarms[alarmIndex].enabled ? "On" : "Off") + " " + getShortWeekdayName(alarms[alarmIndex].day + 1) + " " + formatWithLeadingZero(alarms[alarmIndex].hours) + ":" + formatWithLeadingZero(alarms[alarmIndex].minutes));
+    }
+
     auto drawMenuOption = [&](const String &label, int16_t x, int16_t y, bool selected, bool editing)
     {
         int16_t x1, y1;
@@ -633,7 +648,6 @@ void manageAlarms()
         drawBitmapOption(SCREEN_WIDTH - 30, 20, currentState == 5, isEditing && currentState == 5);
 
         manager.oledDisplay();
-
     }
 
     if (!isEditing)
