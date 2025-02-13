@@ -33,81 +33,83 @@ bool displayedWeather = false;
 unsigned long previousMillisFirstMenu = 0; // Store the last time the display was updated
 const long intervalFirstMenu = 1000;       // Interval at which to run the code (15 seconds)
 
-bool isBeingHeld = false;
-bool currentInputState = false;
-bool previousInputState = false;
-
 void checkTouchButtons()
 {
     if (buttons.checkFirstSegment() || buttons.checkSecondSegment())
     {
+        Serial.println("changing page down");
         cyclePagesDown();
     }
     else if (buttons.checkThirdSegment())
     {
-        cyclePages();
+        PageNumberToShow = 1;
+        Serial.println("setting first page");
     }
     else if (buttons.checkFourthSegment() || buttons.checkFifthSegment())
     {
+        Serial.println("changing page up");
         cyclePagesUp();
     }
 }
 
-unsigned long lastTouchTime = 0; // Time of last touch
+bool isBeingHeld = false;
+bool currentInputState = false;
+bool previousInputState = false;
 
 void showMainPage()
 {
-    unsigned long debounceDelay = 500;
-    bool anyTouch = buttons.checkTouch();
-    static bool initialTouchDetected = false; // Track if initial touch has been detected
 
-    if (anyTouch && !isBeingHeld && (millis() - lastTouchTime > debounceDelay))
+    if (buttons.checkTouch() == true && isBeingHeld == false)
     {
-        currentInputState = true;
-        isBeingHeld = true;
-        Serial.println("Touch Detected");
-        lastTouchTime = millis();
+        int touch1 = touchRead(TOUCH_1_SEGMENT_PIN);
+        int touch2 = touchRead(TOUCH_2_SEGMENT_PIN);
+        int touch3 = touchRead(TOUCH_3_SEGMENT_PIN);
+        int touch4 = touchRead(TOUCH_4_SEGMENT_PIN);
+        int touch5 = touchRead(TOUCH_5_SEGMENT_PIN);
 
-        // Only execute these functions when the touch is initially pressed
-        if (!initialTouchDetected)
+        bool touchCondition = (touch1 < TOUCH_1_SEGMENT_THRESHOLD ||
+                               touch2 < TOUCH_2_SEGMENT_THRESHOLD ||
+                               touch3 < TOUCH_3_SEGMENT_THRESHOLD ||
+                               touch4 < TOUCH_4_SEGMENT_THRESHOLD ||
+                               touch5 < TOUCH_5_SEGMENT_THRESHOLD);
+
+        if (touchCondition)
         {
-            turnOffScreensaver();
-            checkTouchButtons();
-            initialTouchDetected = true; // Mark initial touch as detected
+            currentInputState = true;
+            isBeingHeld = true;
+            Serial.println("Held");
         }
     }
 
-    if (isBeingHeld && !anyTouch)
+    if (isBeingHeld)
     {
-        currentInputState = false;
-        isBeingHeld = false;
-        Serial.println("Touch Released");
+        int touch1 = touchRead(TOUCH_1_SEGMENT_PIN);
+        int touch2 = touchRead(TOUCH_2_SEGMENT_PIN);
+        int touch3 = touchRead(TOUCH_3_SEGMENT_PIN);
+        int touch4 = touchRead(TOUCH_4_SEGMENT_PIN);
+        int touch5 = touchRead(TOUCH_5_SEGMENT_PIN);
 
-        // Reset the initial touch detection flag when touch is released
-        initialTouchDetected = false;
-    }
+        bool touchCondition = (touch1 < TOUCH_1_SEGMENT_THRESHOLD ||
+                               touch2 < TOUCH_2_SEGMENT_THRESHOLD ||
+                               touch3 < TOUCH_3_SEGMENT_THRESHOLD ||
+                               touch4 < TOUCH_4_SEGMENT_THRESHOLD ||
+                               touch5 < TOUCH_5_SEGMENT_THRESHOLD);
 
-    // Check touchRead only when the touch is pressed, but don't execute the functions while holding
-    if (currentInputState && !previousInputState)
-    {
-        // Check each touch pin
-        bool touchActive = false;
-
-        touchActive |= (touchRead(TOUCH_1_SEGMENT_PIN) < TOUCH_1_SEGMENT_THRESHOLD);
-        touchActive |= (touchRead(TOUCH_2_SEGMENT_PIN) < TOUCH_2_SEGMENT_THRESHOLD);
-        touchActive |= (touchRead(TOUCH_3_SEGMENT_PIN) < TOUCH_3_SEGMENT_THRESHOLD);
-        touchActive |= (touchRead(TOUCH_4_SEGMENT_PIN) < TOUCH_4_SEGMENT_THRESHOLD);
-        touchActive |= (touchRead(TOUCH_5_SEGMENT_PIN) < TOUCH_5_SEGMENT_THRESHOLD);
-
-        if (touchActive)
+        if (touchCondition == false)
         {
-            // If touch is still active (being held), do nothing
-            return;
+            currentInputState = false;
+            isBeingHeld = false;
+            Serial.println("Released");
         }
-
-        // If touch is released, reset the initial touch detection flag
-        initialTouchDetected = false;
     }
+
+    if (currentInputState == true && previousInputState == false)
+    {
+        checkTouchButtons();
+        turnOffScreensaver();
+    }
+
+    previousInputState = currentInputState;
 
     unsigned long currentTime = millis();
     if (PageNumberToShow == 1 || PageNumberToShow == 2 || PageNumberToShow == 3 || PageNumberToShow == 4 || PageNumberToShow == 5)
