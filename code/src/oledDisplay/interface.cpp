@@ -551,14 +551,6 @@ void manageAlarms()
     uint8_t alarmIndex = alarmsSubmenu->entries[data.currentButton].text.toInt();
     static bool isEditing = false;
 
-    if (shouldExitLoop() == true)
-    {
-        AlarmMenuUpdate = true;
-        exitLoopFunction = true;
-        AlarmMenuUpdate = true;
-        editCurrentMenuEntry(String(alarmIndex) + " " + String(alarms[alarmIndex].enabled ? "On" : "Off") + " " + getShortWeekdayName(alarms[alarmIndex].day + 1) + " " + formatWithLeadingZero(alarms[alarmIndex].hours) + ":" + formatWithLeadingZero(alarms[alarmIndex].minutes));
-    }
-
     auto drawMenuOption = [&](const String &label, int16_t x, int16_t y, bool selected, bool editing)
     {
         int16_t x1, y1;
@@ -691,6 +683,14 @@ void manageAlarms()
             AlarmMenuUpdate = true;
             isEditing = false;
         }
+    }
+
+    if (shouldExitLoop() == true)
+    {
+        AlarmMenuUpdate = true;
+        exitLoopFunction = true;
+        AlarmMenuUpdate = true;
+        editCurrentMenuEntry(String(alarmIndex) + " " + String(alarms[alarmIndex].enabled ? "On" : "Off") + " " + getShortWeekdayName(alarms[alarmIndex].day + 1) + " " + formatWithLeadingZero(alarms[alarmIndex].hours) + ":" + formatWithLeadingZero(alarms[alarmIndex].minutes));
     }
 }
 
