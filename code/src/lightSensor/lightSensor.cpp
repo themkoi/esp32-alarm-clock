@@ -96,11 +96,10 @@ void dimmingFunction(void *pvParameters)
             maxBrightness = true;
             lastActionTime = millis();
             
-            if (dimmed)
+            if (manager.dimmed)
             {
                 manager.oledFadeIn();
                 manager.oledEnable();
-                dimmed = false;
             }
 
             vTaskDelay(pdMS_TO_TICKS(100));
@@ -113,10 +112,9 @@ void dimmingFunction(void *pvParameters)
                 {
                     lastActionTime = millis();
                     
-                    if (dimmed)
+                    if (manager.dimmed)
                     {
                         manager.oledFadeIn();
-                        dimmed = false;
                     }
 
                     if (!manager.ScreenEnabled)
@@ -170,10 +168,9 @@ void dimOledDisplay()
     {
         manager.oledDisable();
 
-        if (dimmed == false)
+        if (manager.dimmed == false)
         {
             manager.oledFadeOut();
-            dimmed = true;
             delay(50);
         }
         delay(50);
@@ -182,10 +179,9 @@ void dimOledDisplay()
     {
         manager.oledEnable();
 
-        if (dimmed == false)
+        if (manager.dimmed == false)
         {
             manager.oledFadeOut();
-            dimmed = true;
         }
     }
 
