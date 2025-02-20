@@ -55,10 +55,12 @@ void checkTouchButtons()
 bool isBeingHeld = false;
 bool currentInputState = false;
 bool previousInputState = false;
+long lastDebounceTime = 0;      
+bool debouncedTouchState = false; 
 
 void showMainPage()
 {
-
+    const unsigned long debounceDelay = 50;
     if (buttons.checkTouch() == true && isBeingHeld == false)
     {
         int touch1 = touchRead(TOUCH_1_SEGMENT_PIN);
@@ -75,9 +77,12 @@ void showMainPage()
 
         if (touchCondition)
         {
-            currentInputState = true;
-            isBeingHeld = true;
-            Serial.println("Held");
+            if ((millis() - lastDebounceTime) > debounceDelay)
+            {
+                debouncedTouchState = true;
+                isBeingHeld = true;
+                Serial.println("Held");
+            }
         }
     }
 
@@ -95,21 +100,29 @@ void showMainPage()
                                touch4 < TOUCH_4_SEGMENT_THRESHOLD ||
                                touch5 < TOUCH_5_SEGMENT_THRESHOLD);
 
-        if (touchCondition == false)
+        if (!touchCondition)
         {
-            currentInputState = false;
-            isBeingHeld = false;
-            Serial.println("Released");
+            if ((millis() - lastDebounceTime) > debounceDelay)
+            {
+                debouncedTouchState = false;
+                isBeingHeld = false;
+                Serial.println("Released");
+            }
         }
     }
 
-    if (currentInputState == true && previousInputState == false)
+    if (debouncedTouchState && !previousInputState)
     {
-        checkTouchButtons();
         turnOffScreensaver();
+        checkTouchButtons();
     }
 
-    previousInputState = currentInputState;
+    if (debouncedTouchState != previousInputState)
+    {
+        lastDebounceTime = millis();
+    }
+
+    previousInputState = debouncedTouchState;
 
     unsigned long currentTime = millis();
     if (PageNumberToShow == 1 || PageNumberToShow == 2 || PageNumberToShow == 3 || PageNumberToShow == 4 || PageNumberToShow == 5)
@@ -178,6 +191,7 @@ void showMainPage()
         if (currentTime - lastExecutionTime >= SCREENSAVER_DURATION)
         {
             lastExecutionTime = currentTime;
+            Serial.println("turn off screenshaver and cycle pages");
             cyclePages();
         }
         else
