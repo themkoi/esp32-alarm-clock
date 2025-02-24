@@ -60,7 +60,6 @@ extern bool OTAEnabled;
 // Menus
 #define LOOP_FUNCTION_TIMEOUT_MS 60000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
 #define TOTAL_NAV_BUTTONS 4 // how many buttons if you change it will break anyways so
-#define MAX_DEPTH 20 // idk should check
 
 #define MENU_TIMEOUT 10000 // How fast to go to main page without any input
 
