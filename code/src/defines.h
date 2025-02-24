@@ -40,47 +40,49 @@ extern bool OTAEnabled;
 #define CURRENT_WEATHER_INTERVAL 30 * 60 * 1000  // 30 minutes
 
 // Light Sensor
-#define OLED_DISABLE_THRESHOLD 20
-#define LED_DIM_THRESHOLD 30
-#define LED_DISABLE_THRESHOLD 1
+#define OLED_DISABLE_THRESHOLD 20 // lux at which oled will turn off
+#define LED_DIM_THRESHOLD 30 // lux below what screen will have lowest brightness
+#define LED_DISABLE_THRESHOLD 1 // lux at which led screen will turn off
+
+#define DIMMING_INTERVAL 1000 // how often to update screen brightness
+
+#define DIM_DELAY 15000 // how long to have max brightness after input gets detected
+
 #define LED_HYSTERESIS 2
 #define LED_MAX_BRIGHTNESS 100
 #define LED_BRIGHTNESS_MIN 0
 #define LED_BRIGHTNESS_MAX 7
 
-#define DIM_DELAY 15000
-
-#define MAX_INCREASE_OF_LIGHT_LEVEL 1000
-
 // Inputs
 #define HALL_SWITCH GPIO_NUM_39
-
-#define MAX_MENU_ITEMS 15
-#define MAX_ALARMS 15
+//                              rest of inputs are in the buttonmanager was simpler this way I guess
 
 // Menus
-#define LOOP_FUNCTION_TIMEOUT_MS 60000 // 1 minute timeout
-#define TOTAL_NAV_BUTTONS 4
-#define MAX_DEPTH 20
+#define LOOP_FUNCTION_TIMEOUT_MS 60000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
+#define TOTAL_NAV_BUTTONS 4 // how many buttons if you change it will break anyways so
+#define MAX_DEPTH 20 // idk should check
 
-#define MENU_TIMEOUT 10000
+#define MENU_TIMEOUT 10000 // How fast to go to main page without any input
+
+#define MAX_MENU_ITEMS 15 // Max menus change this too if you increase alarm number
+#define MAX_ALARMS 15 // Max number of alarms
 
 #define MAIN_PAGE_DURATION 60000
 #define SCREENSAVER_DURATION 30000
 
-#define N_FLYERS 5  // Numver of flyers on screensaver
+#define N_FLYERS 5  // Number of flyers on screensaver
 
 // Buzzer
 #define BUZZER_PIN GPIO_NUM_14
 #define START_SOUND true // uncomment to enable start sound
 
-// Battery
+// Power management
 #define MIN_VOLTAGE 3.30  // Minimum voltage of LiPo battery
 #define MAX_VOLTAGE 4.20  // Maximum voltage of LiPo battery
 
 #define VOLTAGE_DIVIDER_PIN 34 
 #define ADC_VOLTAGE_DIVIDER 710.094f // 300K and 806K
-#define ADC_OFFSET 77 // In milivolts to calibrate it
+#define ADC_OFFSET 77 // It subtracts from the read milivolts to calibrate the adc a bit its not great but it works
 
 #define POWER_STATE_PIN GPIO_NUM_36
 
@@ -88,17 +90,14 @@ extern bool OTAEnabled;
 #define BATT_TARGET_VOLTAGE 3.85   // Target voltage in volts
 #define BATT_HYSTERESIS 0.15       // charging Hysteresis in volts
 
-#define TIMER_WAKUP_TIME 5000 // In miliseconds
-#define GPIO_WAKUP_TIME 30000 // In miliseconds
-#define SLEEPING_TIME 35 * 1000000 
-
-#define CHARGING_THRESHOLD 1000
-#define STANDBY_THRESHOLD 1000
+#define TIMER_WAKUP_TIME 5000 // How long it will stay awake after waking up from timer
+#define GPIO_WAKUP_TIME 30000 // How long to stay awake after waking up from input
+#define SLEEPING_TIME 35 * 1000000 // In microseconds how long it will sleep for 
 
 // Charts
 #define CHART_READINGS 55 // Number of readings to keep
-#define INTERVAL_CHARTS 300000
-#define BOOL_STR(b) ((b) ? String("True") : String("False"))
+#define INTERVAL_CHARTS 300000 // How often to read data for charts 
+#define BOOL_STR(b) ((b) ? String("True") : String("False")) // dont touch
 
 
 #include "hardware/pitches.h"

@@ -49,22 +49,28 @@ void dimmingFunction(void *pvParameters)
     unsigned long intervalState = 30000;
 
     unsigned long lastActionTime = 0;
-    
-    while (true) // FreeRTOS task must always run
+
+    while (true)
     {
         dimmingTaskRunning = true;
 
-        while (buttons.checkInput() == false) // Only executes when a button is pressed
+        while (buttons.checkInput() == false)
         {
             unsigned long currentMillis = millis();
 
-            if (currentMillis - previousMillisLight >= intervalLight)
+            if (currentMillis - previousMillisLight >= INTERVAL_CHARTS)
             {
+                lightLevel = getLightLevel();
                 for (int i = 0; i < CHART_READINGS - 1; i++)
                 {
                     lightArray[i] = lightArray[i + 1];
                 }
-                lightArray[CHART_READINGS - 1] = getLightLevel();
+                lightArray[CHART_READINGS - 1] = lightLevel;
+                previousMillisLight = currentMillis;
+            }
+            else if (currentMillis - previousMillisLight >= intervalDimming)
+            {
+                lightLevel = getLightLevel();
                 previousMillisLight = currentMillis;
             }
 
@@ -77,14 +83,13 @@ void dimmingFunction(void *pvParameters)
 
             if (currentMillis - previousMillisDimming >= intervalDimming && powerConnected)
             {
-                lightLevel = getLightLevel();
                 dimOledDisplay();
                 maxBrightness = false;
 
-                Serial.println("Reading brightness and dimming OLED accordingly: " + String(lightLevel));
+                Serial.println("dimming OLED accordingly: " + String(lightLevel));
                 previousMillisDimming = currentMillis;
             }
-            
+
             vTaskDelay(pdMS_TO_TICKS(10));
         }
 
@@ -95,7 +100,7 @@ void dimmingFunction(void *pvParameters)
 
             maxBrightness = true;
             lastActionTime = millis();
-            
+
             if (manager.dimmed)
             {
                 manager.oledFadeIn();
@@ -106,12 +111,12 @@ void dimmingFunction(void *pvParameters)
 
             while (millis() - lastActionTime < DIM_DELAY)
             {
-                vTaskDelay(pdMS_TO_TICKS(100));
-                
+                vTaskDelay(pdMS_TO_TICKS(5));
+
                 if (buttons.checkInput() == true)
                 {
                     lastActionTime = millis();
-                    
+
                     if (manager.dimmed)
                     {
                         manager.oledFadeIn();
@@ -122,7 +127,7 @@ void dimmingFunction(void *pvParameters)
                         manager.oledEnable();
                     }
 
-                    vTaskDelay(pdMS_TO_TICKS(100));
+                    vTaskDelay(pdMS_TO_TICKS(5));
 
                     while (buttons.checkInput() == true)
                     {
@@ -132,6 +137,7 @@ void dimmingFunction(void *pvParameters)
             }
 
             dimOledDisplay();
+            lightLevel = getLightLevel();
             inputDetected = false;
         }
     }
@@ -161,10 +167,10 @@ void dimOledDisplay()
 {
     int currentHour = hour();
     int currentMinute = minute();
-    Serial.println("raw light level: " + String(getLightLevel()));
+    Serial.println("raw light level: " + String(lightLevel));
     Serial.println("smoothened light level: " + String(lightLevel));
 
-    if (shouldTurnOffDisplay(getLightLevel()) == true || (lightState == 0 && WiFi.SSID() == SSID1 && lightState != 3 && WiFi.isConnected() == true))
+    if (shouldTurnOffDisplay(lightLevel) == true || (lightState == 0 && WiFi.SSID() == SSID1 && lightState != 3 && WiFi.isConnected() == true))
     {
         manager.oledDisable();
 
@@ -190,37 +196,38 @@ void dimOledDisplay()
 
 static int ledLastBrightness = LED_BRIGHTNESS_MIN;
 
-int mapWithHysteresis(int lightLevel) {
-    // Handle case where light is below the disable threshold
-    if (lightLevel <= LED_DISABLE_THRESHOLD) {
+int mapWithHysteresis(int lightLevel)
+{
+    if (lightLevel <= LED_DISABLE_THRESHOLD)
+    {
         ledLastBrightness = LED_BRIGHTNESS_MIN;
         return ledLastBrightness;
     }
 
     // Manual linear mapping (same as map function)
     int newBrightness = (lightLevel - LED_DIM_THRESHOLD) * (LED_BRIGHTNESS_MAX - LED_BRIGHTNESS_MIN) /
-                        (LED_MAX_BRIGHTNESS - LED_DIM_THRESHOLD) + LED_BRIGHTNESS_MIN;
+                            (LED_MAX_BRIGHTNESS - LED_DIM_THRESHOLD) +
+                        LED_BRIGHTNESS_MIN;
 
     // Constrain brightness within valid range
     newBrightness = constrain(newBrightness, LED_BRIGHTNESS_MIN, LED_BRIGHTNESS_MAX);
 
-    // Hysteresis logic: separate conditions for increasing and decreasing brightness
-    if (newBrightness > ledLastBrightness + LED_HYSTERESIS) {
-        ledLastBrightness = newBrightness; // Allow increase when crossing upper hysteresis
-    } 
-    else if (newBrightness < ledLastBrightness - LED_HYSTERESIS) {
-        ledLastBrightness = newBrightness; // Allow decrease when crossing lower hysteresis
+    if (newBrightness > ledLastBrightness + LED_HYSTERESIS)
+    {
+        ledLastBrightness = newBrightness;
+    }
+    else if (newBrightness < ledLastBrightness - LED_HYSTERESIS)
+    {
+        ledLastBrightness = newBrightness;
     }
 
     return ledLastBrightness;
 }
 
-
 void dimLedDisplay()
 {
     int currentHour = hour();
     int currentMinute = minute();
-    lightLevel = getLightLevel();
     Serial.println("raw light level: " + String(getLightLevel()));
     Serial.println("smoothened light level: " + String(lightLevel));
 
