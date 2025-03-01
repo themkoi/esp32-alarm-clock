@@ -129,7 +129,7 @@ void dimmingFunction(void *pvParameters)
 
                     vTaskDelay(pdMS_TO_TICKS(5));
 
-                    while (buttons.checkInput() == true)
+                    if (buttons.checkInput() == true)
                     {
                         lastActionTime = millis();
                     }
@@ -190,8 +190,6 @@ void dimOledDisplay()
             manager.oledFadeOut();
         }
     }
-
-    Serial.println("display off");
 }
 
 static int ledLastBrightness = LED_BRIGHTNESS_MIN;
