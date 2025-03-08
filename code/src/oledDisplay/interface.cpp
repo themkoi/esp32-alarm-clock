@@ -1,6 +1,6 @@
 #include "interface.h"
 
-#define BUTTONS_OFFSET 2
+#define BUTTONS_OFFSET 1
 #define BUTTON_HEIGHT 10
 
 struct entryMenu
@@ -57,12 +57,42 @@ void resetPreviousItems()
     display.clearDisplay();
 }
 
-void showMenu() // please implement eventgroups later so it works better because the current way is very flawed and wastes time
+void showMenu() 
 {
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     display.clearDisplay();
     display.setTextSize(data.textSize);
-    data.itemsOnPage = 4;
+
+    int maxItems = 5;
+    int minItems = 1;
+    int availableHeight = SCREEN_HEIGHT - 20;
+    int usedHeight = 0;
+    int tmpItemsOnPage = maxItems;
+
+for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.totalMenus); i++)
+{
+    String text = data.isSubmenu ? data.currentSubmenu[i].text : data.entryList[i].text;
+    if ((data.isSubmenu && data.currentSubmenu[i].boolPtr) || (!data.isSubmenu && data.entryList[i].boolPtr))
+    {
+        text += " " + String(*(data.isSubmenu ? data.currentSubmenu[i].boolPtr : data.entryList[i].boolPtr) ? "True" : "False");
+    }
+
+    int16_t x1, y1;
+    uint16_t textWidth, textHeight;
+    display.getTextBounds(text, 0, 0, &x1, &y1, &textWidth, &textHeight);
+
+    int lineHeight = (textWidth > SCREEN_WIDTH) ? (textHeight * 2) : textHeight;
+
+    if (usedHeight + lineHeight > availableHeight)
+    {
+        tmpItemsOnPage = max(minItems, i);
+        break;
+    }
+    usedHeight += lineHeight + BUTTONS_OFFSET;
+}
+
+    data.itemsOnPage = tmpItemsOnPage;
+
     int startingButton = data.currentButton - (data.currentButton % data.itemsOnPage);
     currentPage = data.currentButton / data.itemsOnPage;
     pageNumber = ((data.isSubmenu ? data.submenuCount : data.totalMenus) + data.itemsOnPage - 1) / data.itemsOnPage;
@@ -78,9 +108,32 @@ void showMenu() // please implement eventgroups later so it works better because
     int y = 20;
     for (int i = startingButton; i < startingButton + data.itemsOnPage && i < (data.isSubmenu ? data.submenuCount : data.totalMenus); i++)
     {
+        String displayText = data.isSubmenu ? data.currentSubmenu[i].text : data.entryList[i].text;
+        if ((data.isSubmenu && data.currentSubmenu[i].boolPtr) || (!data.isSubmenu && data.entryList[i].boolPtr))
+        {
+            displayText += " " + String(*(data.isSubmenu ? data.currentSubmenu[i].boolPtr : data.entryList[i].boolPtr) ? "True" : "False");
+        }
+
+        int16_t x1, y1;
+        uint16_t textWidth, textHeight;
+        display.getTextBounds(displayText, 0, 0, &x1, &y1, &textWidth, &textHeight);
+        Serial.println("width:" + String(textWidth));
+        Serial.println("height:" + String(textHeight));
+
+        float floatLines = textHeight / BUTTON_HEIGHT;
+        int lines = round(floatLines);
+        if (lines == 0)
+        {
+            lines++;
+        }
+        
+
+        int boxHeight = (lines * BUTTON_HEIGHT) + (lines * BUTTONS_OFFSET); 
+        int boxY = y - 8;
+
         if (data.currentButton == i)
         {
-            display.fillRect(0, y - 8, SCREEN_WIDTH, BUTTON_HEIGHT, SSD1306_WHITE);
+            display.fillRect(0, boxY, SCREEN_WIDTH, boxHeight, SSD1306_WHITE);
             display.setTextColor(SSD1306_BLACK);
         }
         else
@@ -88,26 +141,17 @@ void showMenu() // please implement eventgroups later so it works better because
             display.setTextColor(SSD1306_WHITE);
         }
 
-        String displayText = (data.isSubmenu ? data.currentSubmenu[i].text : data.entryList[i].text);
-        if (data.isSubmenu && data.currentSubmenu[i].boolPtr != nullptr)
-        {
-            displayText += " " + String(*(data.currentSubmenu[i].boolPtr) ? "True" : "False");
-        }
-        else if (!data.isSubmenu && data.entryList[i].boolPtr != nullptr)
-        {
-            displayText += " " + String(*(data.entryList[i].boolPtr) ? "True" : "False");
-        }
-
-        display.setCursor(0, y);
+        display.setCursor(4, y);
         display.print(displayText);
 
-        y += BUTTON_HEIGHT + BUTTONS_OFFSET;
+        y += boxHeight + BUTTONS_OFFSET;
     }
 
     manager.oledDisplay();
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     display.setTextColor(SSD1306_WHITE);
 }
+
 
 void initMenu(entryMenu *entryList, int totalMenus, String menuName, int textSize, int linesThick)
 {
@@ -531,12 +575,10 @@ Submenu *createAlarmsMenu()
     Submenu *alarmsSubmenu = nullptr;
     if (!alarmsSubmenu)
     {
-        alarmsSubmenu = createSubmenu("Alarms", MAX_ALARMS + 2); // +2 for the managing menus mhm
+        alarmsSubmenu = createSubmenu("Alarms", MAX_ALARMS + 1); // +1 for the add alarm mhm
 
         // Add "Add New Alarm" option
         addEntryToSubmenu(alarmsSubmenu, "Add New Alarm", addNewAlarm);
-
-        addEntryToSubmenu(alarmsSubmenu, "Save Alarms", saveAlarms);
     }
     return alarmsSubmenu;
 }
@@ -785,7 +827,6 @@ void initMenus()
 
     Submenu *weatherSubmenu = new Submenu{"Weather", WeatherItems, 4, 4};
 
-    // Initialize main menu buttons
     entryMenu weatherButton = {"Weather", nullptr, nullptr, weatherSubmenu, nullptr};
 
     entryMenu *chartItems = new entryMenu[3]{
@@ -796,7 +837,6 @@ void initMenus()
 
     Submenu *chartSubmenu = new Submenu{"Charts", chartItems, 3, 3};
 
-    // Initialize main menu buttons
     entryMenu chartButton = {"Charts", nullptr, nullptr, chartSubmenu, nullptr};
 
     entryMenu *debugItems = new entryMenu[6]{
@@ -809,13 +849,11 @@ void initMenus()
     };
 
     Submenu *debugSubmenu = new Submenu{"Debug", debugItems, 6, 6};
-
-    // Initialize main menu buttons
     entryMenu debugButton = {"Debug", nullptr, nullptr, debugSubmenu, nullptr};
 
-    // Initialize new button for the alarms menu
-    alarmsSubmenu = createAlarmsMenu();                                                   // Call the function to get the Submenu*
-    entryMenu alarmsButton = {"Manage Alarms", nullptr, nullptr, alarmsSubmenu, nullptr}; // Use alarmsSubmenu
+    // Initialize alarm menu
+    alarmsSubmenu = createAlarmsMenu();                                                   
+    entryMenu alarmsButton = {"Manage Alarms", nullptr, nullptr, alarmsSubmenu, nullptr}; 
 
     // Initialize the main menu
     initMenu(new entryMenu[4]{
