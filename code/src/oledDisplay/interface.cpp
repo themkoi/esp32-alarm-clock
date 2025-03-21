@@ -63,7 +63,7 @@ void showMenu()
     display.clearDisplay();
     display.setTextSize(data.textSize);
 
-    int maxItems = 5;
+    int maxItems = 4;
     int minItems = 1;
     int availableHeight = SCREEN_HEIGHT - 20;
     int usedHeight = 0;
@@ -851,9 +851,19 @@ void initMenus()
     Submenu *debugSubmenu = new Submenu{"Debug", debugItems, 6, 6};
     entryMenu debugButton = {"Debug", nullptr, nullptr, debugSubmenu, nullptr};
 
+    entryMenu *manageAlarmsItems = new entryMenu[1]{
+        {"Save Alarms", saveAlarms, nullptr, nullptr, nullptr},
+    };
+    Submenu *manageAlarmsSubmenu = new Submenu{"Alarm Ctrl", manageAlarmsItems, 1, 1};
+
     // Initialize alarm menu
-    alarmsSubmenu = createAlarmsMenu();                                                   
-    entryMenu alarmsButton = {"Manage Alarms", nullptr, nullptr, alarmsSubmenu, nullptr}; 
+    alarmsSubmenu = createAlarmsMenu();
+    entryMenu *alarmsItems = new entryMenu[2]{
+        {"Alarms", nullptr, nullptr, alarmsSubmenu, nullptr},
+        {"Alarm Ctrl", nullptr, nullptr, manageAlarmsSubmenu, nullptr},
+    };
+    Submenu *alarmsSubmenu = new Submenu{"Alarms", alarmsItems, 2, 2};                                                   
+    entryMenu alarmsButton = {"Alarms", nullptr, nullptr, alarmsSubmenu, nullptr}; 
 
     // Initialize the main menu
     initMenu(new entryMenu[4]{
