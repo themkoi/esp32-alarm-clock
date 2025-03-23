@@ -67,8 +67,15 @@ void manageBattery(void *parameter)
       };
       esp_pm_configure(&pm_config);
       Serial.println("Set pm config");
+      if (previousPowerConnected == false)
+      {
+        buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD);
+        buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD);
+        buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD);
+        buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD);
+        buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD);
+      }
 
-      // Update the previous state
       previousPowerConnected = powerConnected;
       wentToSleep = false;
       preparingForSleep = false;
@@ -84,9 +91,15 @@ void manageBattery(void *parameter)
     }
     else
     {
-      digitalWrite(CHARGER_CONTROL_PIN, LOW); // Disable Charger when power is off
+      digitalWrite(CHARGER_CONTROL_PIN, LOW);
+      buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_BAT);
+      buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_BAT);
+      buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_BAT);
+      buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_BAT);
+      buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_BAT);
       turnOffWifi();
       vTaskDelay(pdMS_TO_TICKS(500));
+      previousPowerConnected = false;
 
       static unsigned long sleepStartTime = 0;
 
@@ -118,9 +131,6 @@ void manageBattery(void *parameter)
       checkPower();
       if (wentToSleep == true && powerConnected == false)
       {
-
-        // Handle wakeup cases
-        // Handle wakeup cases
         if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER)
         {
           Serial.println("Woke up from Timer");
@@ -265,11 +275,11 @@ void initSleep()
 
   esp_sleep_enable_timer_wakeup(SLEEPING_TIME);
 
-  touchSleepWakeUpEnable(TOUCH_1_SEGMENT_PIN, TOUCH_1_SEGMENT_THRESHOLD);
-  touchSleepWakeUpEnable(TOUCH_2_SEGMENT_PIN, TOUCH_2_SEGMENT_THRESHOLD);
-  touchSleepWakeUpEnable(TOUCH_3_SEGMENT_PIN, TOUCH_3_SEGMENT_THRESHOLD);
-  touchSleepWakeUpEnable(TOUCH_4_SEGMENT_PIN, TOUCH_4_SEGMENT_THRESHOLD);
-  touchSleepWakeUpEnable(TOUCH_5_SEGMENT_PIN, TOUCH_5_SEGMENT_THRESHOLD);
+  touchSleepWakeUpEnable(TOUCH_1_SEGMENT_PIN, TOUCH_1_SEGMENT_THRESHOLD_SLEEP);
+  touchSleepWakeUpEnable(TOUCH_2_SEGMENT_PIN, TOUCH_2_SEGMENT_THRESHOLD_SLEEP);
+  touchSleepWakeUpEnable(TOUCH_3_SEGMENT_PIN, TOUCH_3_SEGMENT_THRESHOLD_SLEEP);
+  touchSleepWakeUpEnable(TOUCH_4_SEGMENT_PIN, TOUCH_4_SEGMENT_THRESHOLD_SLEEP);
+  touchSleepWakeUpEnable(TOUCH_5_SEGMENT_PIN, TOUCH_5_SEGMENT_THRESHOLD_SLEEP);
 
 
   esp_sleep_enable_touchpad_wakeup();
