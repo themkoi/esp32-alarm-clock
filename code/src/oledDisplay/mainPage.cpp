@@ -30,8 +30,8 @@ int PageNumberToShow = 1;
 int LastPageShown = 1;
 bool displayedWeather = false;
 
-unsigned long previousMillisFirstMenu = 0; // Store the last time the display was updated
-const long intervalFirstMenu = 1000;       // Interval at which to run the code (15 seconds)
+unsigned long previousMillisFirstMenu = 0;
+const long intervalFirstMenu = 1000;      
 
 void checkTouchButtons()
 {
@@ -252,10 +252,9 @@ void showFirstPage()
     manager.oledDisplay();
 }
 
-// Function to format the temperature as a string with one decimal place
 auto formatTemperature = [](float minTemp, float maxTemp)
 {
-    char tempStr[6]; // Enough space for "0.0C\0"
+    char tempStr[6];
     float avgTemp = (minTemp + maxTemp) / 2.0;
     dtostrf(avgTemp, 4, 1, tempStr);
     return String(tempStr) + "C";
@@ -295,10 +294,8 @@ void showForecastPage()
 
 void displayWiFiSignal(int x, int y)
 {
-    // Get the RSSI (Received Signal Strength Indicator)
     int32_t rssi = WiFi.RSSI();
 
-    // Select the appropriate icon based on the RSSI value
     const uint8_t *wifiIcon;
 
     if (WiFi.status() != WL_CONNECTED)
