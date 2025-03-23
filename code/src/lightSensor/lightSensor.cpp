@@ -1,6 +1,7 @@
 #include "defines.h"
 
-void dimmingFunction(void *pvParameters);
+void dimmingTask(void *pvParameters);
+void oledWakeupTask(void *pvParameters);
 void dimOledDisplay();
 void dimLedDisplay();
 
@@ -12,7 +13,7 @@ bool displayON = true;
 
 bool inputDetected = false;
 
-TaskHandle_t dimmingTask;
+TaskHandle_t dimmingTaskHandle;
 
 void createDimmingTask()
 {
@@ -22,13 +23,23 @@ void createDimmingTask()
     }
     Serial.print("creating dimmingTask");
     xTaskCreatePinnedToCore(
-        dimmingFunction, /* Task function. */
-        "DimTask",       /* String with name of task. */
-        10000,           /* Stack size in words. */
-        NULL,            /* Parameter passed as input of the task */
-        1,               /* Priority of the task. */
-        &dimmingTask,    /* Task handle. */
-        1                /* Core where the task should run. */
+        dimmingTask,        /* Task function. */
+        "DimTask",          /* String with name of task. */
+        10000,              /* Stack size in words. */
+        NULL,               /* Parameter passed as input of the task */
+        1,                  /* Priority of the task. */
+        &dimmingTaskHandle, /* Task handle. */
+        1                   /* Core where the task should run. */
+    );
+
+    xTaskCreatePinnedToCore(
+        oledWakeupTask, /* Task function. */
+        "DimTask",      /* String with name of task. */
+        10000,          /* Stack size in words. */
+        NULL,           /* Parameter passed as input of the task */
+        2,              /* Priority of the task. */
+        NULL,           /* Task handle. */
+        1               /* Core where the task should run. */
     );
 }
 
@@ -37,7 +48,75 @@ bool dimmed = false;
 float lightLevel = 0.0;
 int lightState = 0;
 
-void dimmingFunction(void *pvParameters)
+void oledWakeupTask(void *pvParameters)
+{
+    unsigned long lastActionTime = 0;
+    while (true)
+    {
+        if (buttons.checkInput())
+        {
+            if (checkPower() == true)
+            {
+                vTaskSuspend(dimmingTaskHandle);
+                Serial.println("Button pressed");
+                Serial.println("Setting max brightness");
+
+                maxBrightness = true;
+                lastActionTime = millis();
+
+                if (manager.dimmed)
+                {
+                    manager.oledFadeIn();
+                    manager.oledEnable();
+                }
+
+                vTaskDelay(pdMS_TO_TICKS(100));
+
+                while (millis() - lastActionTime < DIM_DELAY)
+                {
+                    vTaskDelay(pdMS_TO_TICKS(5));
+
+                    if (buttons.checkInput() == true)
+                    {
+                        lastActionTime = millis();
+
+                        if (manager.dimmed)
+                        {
+                            manager.oledFadeIn();
+                        }
+
+                        if (!manager.ScreenEnabled)
+                        {
+                            manager.oledEnable();
+                        }
+
+                        vTaskDelay(pdMS_TO_TICKS(5));
+
+                        if (buttons.checkInput() == true)
+                        {
+                            lastActionTime = millis();
+                        }
+                    }
+                }
+
+                dimOledDisplay();
+                lightLevel = getLightLevel();
+                inputDetected = false;
+            }
+        }
+        else
+        {
+            eTaskState dimmingTaskState = eTaskGetState(dimmingTaskHandle);
+            if (dimmingTaskState == eSuspended)
+            {
+                vTaskResume(dimmingTaskHandle);
+            }
+            delay(10);
+        }
+    }
+}
+
+void dimmingTask(void *pvParameters)
 {
     unsigned long intervalLight = 60000;
     unsigned long previousMillisLight = 0;
@@ -48,98 +127,44 @@ void dimmingFunction(void *pvParameters)
     unsigned long previousMillisState = 0;
     unsigned long intervalState = 30000;
 
-    unsigned long lastActionTime = 0;
-
     while (true)
     {
         dimmingTaskRunning = true;
+        unsigned long currentMillis = millis();
 
-        while (buttons.checkInput() == false)
+        if (currentMillis - previousMillisLight >= INTERVAL_CHARTS)
         {
-            unsigned long currentMillis = millis();
-
-            if (currentMillis - previousMillisLight >= INTERVAL_CHARTS)
-            {
-                lightLevel = getLightLevel();
-                for (int i = 0; i < CHART_READINGS - 1; i++)
-                {
-                    lightArray[i] = lightArray[i + 1];
-                }
-                lightArray[CHART_READINGS - 1] = lightLevel;
-                previousMillisLight = currentMillis;
-            }
-            else if (currentMillis - previousMillisLight >= intervalDimming)
-            {
-                lightLevel = getLightLevel();
-                previousMillisLight = currentMillis;
-            }
-
-            if (currentMillis - previousMillisState >= intervalState && WiFi.isConnected() && powerConnected && WiFi.SSID() == SSID1)
-            {
-                lightState = getLightState();
-                previousMillisState = currentMillis;
-                delay(100);
-            }
-
-            if (currentMillis - previousMillisDimming >= intervalDimming && powerConnected)
-            {
-                dimOledDisplay();
-                maxBrightness = false;
-
-                Serial.println("dimming OLED accordingly: " + String(lightLevel));
-                previousMillisDimming = currentMillis;
-            }
-
-            vTaskDelay(pdMS_TO_TICKS(10));
-        }
-
-        if (checkPower() == true)
-        {
-            Serial.println("Button pressed");
-            Serial.println("Setting max brightness");
-
-            maxBrightness = true;
-            lastActionTime = millis();
-
-            if (manager.dimmed)
-            {
-                manager.oledFadeIn();
-                manager.oledEnable();
-            }
-
-            vTaskDelay(pdMS_TO_TICKS(100));
-
-            while (millis() - lastActionTime < DIM_DELAY)
-            {
-                vTaskDelay(pdMS_TO_TICKS(5));
-
-                if (buttons.checkInput() == true)
-                {
-                    lastActionTime = millis();
-
-                    if (manager.dimmed)
-                    {
-                        manager.oledFadeIn();
-                    }
-
-                    if (!manager.ScreenEnabled)
-                    {
-                        manager.oledEnable();
-                    }
-
-                    vTaskDelay(pdMS_TO_TICKS(5));
-
-                    if (buttons.checkInput() == true)
-                    {
-                        lastActionTime = millis();
-                    }
-                }
-            }
-
-            dimOledDisplay();
             lightLevel = getLightLevel();
-            inputDetected = false;
+            for (int i = 0; i < CHART_READINGS - 1; i++)
+            {
+                lightArray[i] = lightArray[i + 1];
+            }
+            lightArray[CHART_READINGS - 1] = lightLevel;
+            previousMillisLight = currentMillis;
         }
+        else if (currentMillis - previousMillisLight >= intervalDimming)
+        {
+            lightLevel = getLightLevel();
+            previousMillisLight = currentMillis;
+        }
+
+        if (currentMillis - previousMillisState >= intervalState && WiFi.isConnected() && powerConnected && WiFi.SSID() == SSID1)
+        {
+            lightState = getLightState();
+            previousMillisState = currentMillis;
+            delay(100);
+        }
+
+        if (currentMillis - previousMillisDimming >= intervalDimming && powerConnected)
+        {
+            dimOledDisplay();
+            maxBrightness = false;
+
+            Serial.println("dimming OLED accordingly: " + String(lightLevel));
+            previousMillisDimming = currentMillis;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 

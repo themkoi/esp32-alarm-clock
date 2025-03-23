@@ -107,23 +107,23 @@ typedef struct OM_CurrentAirQuality
 
 #define HOURLY_API_LINK "&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,weather_code,pressure_msl,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,is_day&daily=sunrise,sunset&timeformat=unixtime&timezone=auto"
 
-void getHourlyForecast(OM_HourlyForecast *structure, float latitude, float longitude, String apiLink = HOURLY_API_LINK);
+bool getHourlyForecast(OM_HourlyForecast *structure, float latitude, float longitude, String apiLink = HOURLY_API_LINK);
 
 #define DAILY_API_LINK "&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,precipitation_hours,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant&timeformat=unixtime&timezone=auto"
 
-void getDailyForecast(OM_DailyForecast *structure, float latitude, float longitude, String apiLink = DAILY_API_LINK);
+bool getDailyForecast(OM_DailyForecast *structure, float latitude, float longitude, String apiLink = DAILY_API_LINK);
 
 #define CURRENT_API_LINK "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timeformat=unixtime&timezone=auto"
 
-void getCurrentWeather(OM_CurrentWeather *structure, float latitude, float longitude, String apiLink = CURRENT_API_LINK);
+bool getCurrentWeather(OM_CurrentWeather *structure, float latitude, float longitude, String apiLink = CURRENT_API_LINK);
 
 #define AIR_HOURLY_API_LINK "&hourly=european_aqi&timeformat=unixtime&timezone=auto"
 
-void getAirQualityForecast(OM_AirQualityForecast *structure, float latitude, float longitude, String apiLink = AIR_HOURLY_API_LINK);
+bool getAirQualityForecast(OM_AirQualityForecast *structure, float latitude, float longitude, String apiLink = AIR_HOURLY_API_LINK);
 
 #define AIR_CURRENT_API_LINK "&current=european_aqi&timeformat=unixtime&timezone=auto"
 
-void getCurrentAirQuality(OM_CurrentAirQuality *structure, float latitude, float longitude, String apiLink);
+bool getCurrentAirQuality(OM_CurrentAirQuality *structure, float latitude, float longitude, String apiLink);
 
 
 #endif
