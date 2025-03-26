@@ -150,8 +150,8 @@ void ringAlarm(void *parameter)
   int currentHour = hour();
   int currentMinute = minute();
 
-  int alarmMelody[] = {NOTE_A5, NOTE_A5, NOTE_A6, NOTE_A6, NOTE_A6, NOTE_A6, NOTE_A4, NOTE_A4};
-  int alarmDurations[] = {4, 4, 4, 7, 7, 7, 4, 4};
+  int alarmMelody[] = {NOTE_C7, NOTE_C7, NOTE_B7, NOTE_B7, NOTE_B7, NOTE_B7, NOTE_G6, NOTE_G6};
+  int alarmDurations[] = {8, 8, 8, 12, 12, 12, 8, 8};
   alarmStartTime = millis();
 
   if (!(currentHour >= 11 && currentHour <= 21) || ringOn == false)
