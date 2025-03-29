@@ -55,54 +55,51 @@ void oledWakeupTask(void *pvParameters)
     {
         if (buttons.checkInput())
         {
-            if (checkPower() == true)
+            vTaskSuspend(dimmingTaskHandle);
+            Serial.println("Button pressed");
+            Serial.println("Setting max brightness");
+
+            maxBrightness = true;
+            lastActionTime = millis();
+
+            if (manager.dimmed)
             {
-                vTaskSuspend(dimmingTaskHandle);
-                Serial.println("Button pressed");
-                Serial.println("Setting max brightness");
+                manager.oledFadeIn();
+                manager.oledEnable();
+            }
 
-                maxBrightness = true;
-                lastActionTime = millis();
+            vTaskDelay(pdMS_TO_TICKS(100));
 
-                if (manager.dimmed)
+            while (millis() - lastActionTime < DIM_DELAY)
+            {
+                vTaskDelay(pdMS_TO_TICKS(5));
+
+                if (buttons.checkInput() == true)
                 {
-                    manager.oledFadeIn();
-                    manager.oledEnable();
-                }
+                    lastActionTime = millis();
 
-                vTaskDelay(pdMS_TO_TICKS(100));
+                    if (manager.dimmed)
+                    {
+                        manager.oledFadeIn();
+                    }
 
-                while (millis() - lastActionTime < DIM_DELAY)
-                {
+                    if (!manager.ScreenEnabled)
+                    {
+                        manager.oledEnable();
+                    }
+
                     vTaskDelay(pdMS_TO_TICKS(5));
 
                     if (buttons.checkInput() == true)
                     {
                         lastActionTime = millis();
-
-                        if (manager.dimmed)
-                        {
-                            manager.oledFadeIn();
-                        }
-
-                        if (!manager.ScreenEnabled)
-                        {
-                            manager.oledEnable();
-                        }
-
-                        vTaskDelay(pdMS_TO_TICKS(5));
-
-                        if (buttons.checkInput() == true)
-                        {
-                            lastActionTime = millis();
-                        }
                     }
                 }
-
-                dimOledDisplay();
-                lightLevel = getLightLevel();
-                inputDetected = false;
             }
+
+            dimOledDisplay();
+            lightLevel = getLightLevel();
+            inputDetected = false;
         }
         else
         {

@@ -31,26 +31,7 @@ int LastPageShown = 1;
 bool displayedWeather = false;
 
 unsigned long previousMillisFirstMenu = 0;
-const long intervalFirstMenu = 1000;      
-
-void checkTouchButtons()
-{
-    if (buttons.checkFirstSegment() || buttons.checkSecondSegment())
-    {
-        Serial.println("changing page down");
-        cyclePagesDown();
-    }
-    else if (buttons.checkThirdSegment())
-    {
-        PageNumberToShow = 1;
-        Serial.println("setting first page");
-    }
-    else if (buttons.checkFourthSegment() || buttons.checkFifthSegment())
-    {
-        Serial.println("changing page up");
-        cyclePagesUp();
-    }
-}
+const long intervalFirstMenu = 1000;
 
 bool isBeingHeld = false;
 bool currentInputState = false;
@@ -58,71 +39,107 @@ bool previousInputState = false;
 long lastDebounceTime = 0;
 bool debouncedTouchState = false;
 
+bool lastFirstSegment = false;
+bool lastSecondSegment = false;
+bool lastThirdSegment = false;
+bool lastFourthSegment = false;
+bool lastFifthSegment = false;
+
+void checkTouchButtons()
+{
+    if (lastFirstSegment || lastSecondSegment)
+    {
+        Serial.println("changing page down");
+        cyclePagesDown();
+    }
+    else if (lastThirdSegment)
+    {
+        PageNumberToShow = 1;
+        Serial.println("setting first page");
+    }
+    else if (lastFourthSegment || lastFifthSegment)
+    {
+        Serial.println("changing page up");
+        cyclePagesUp();
+    }
+}
+
 void showMainPage()
 {
     const unsigned long debounceDelay = 50;
-    if (buttons.checkTouch() == true && isBeingHeld == false)
+
+    bool firstSegment = buttons.checkFirstSegment();
+    bool secondSegment = buttons.checkSecondSegment();
+    bool thirdSegment = buttons.checkThirdSegment();
+    bool fourthSegment = buttons.checkFourthSegment();
+    bool fifthSegment = buttons.checkFifthSegment();
+
+    Serial.print("firstSegment: ");
+    Serial.println(firstSegment);
+    Serial.print("secondSegment: ");
+    Serial.println(secondSegment);
+    Serial.print("thirdSegment: ");
+    Serial.println(thirdSegment);
+    Serial.print("fourthSegment: ");
+    Serial.println(fourthSegment);
+    Serial.print("fifthSegment: ");
+    Serial.println(fifthSegment);
+
+    if ((firstSegment || secondSegment || thirdSegment || fourthSegment || fifthSegment) && isBeingHeld == false)
     {
-        int touch1 = touchRead(TOUCH_1_SEGMENT_PIN);
-        int touch2 = touchRead(TOUCH_2_SEGMENT_PIN);
-        int touch3 = touchRead(TOUCH_3_SEGMENT_PIN);
-        int touch4 = touchRead(TOUCH_4_SEGMENT_PIN);
-        int touch5 = touchRead(TOUCH_5_SEGMENT_PIN);
-        bool touchCondition = false;
+        lastFirstSegment = firstSegment;
+        lastSecondSegment = secondSegment;
+        lastThirdSegment = thirdSegment;
+        lastFourthSegment = fourthSegment;
+        lastFifthSegment = fifthSegment;
 
-        if (checkPower() == true)
-        {
-            touchCondition = (touch1 < TOUCH_1_SEGMENT_THRESHOLD ||
-                              touch2 < TOUCH_2_SEGMENT_THRESHOLD ||
-                              touch3 < TOUCH_3_SEGMENT_THRESHOLD ||
-                              touch4 < TOUCH_4_SEGMENT_THRESHOLD ||
-                              touch5 < TOUCH_5_SEGMENT_THRESHOLD);
-        }
-        else
-        {
-            touchCondition = (touch1 < TOUCH_1_SEGMENT_THRESHOLD_BAT ||
-                              touch2 < TOUCH_2_SEGMENT_THRESHOLD_BAT ||
-                              touch3 < TOUCH_3_SEGMENT_THRESHOLD_BAT ||
-                              touch4 < TOUCH_4_SEGMENT_THRESHOLD_BAT ||
-                              touch5 < TOUCH_5_SEGMENT_THRESHOLD_BAT);
-        }
+        turnOffScreensaver();
+        cyclePagesUp();
 
-        if (touchCondition)
+        if ((millis() - lastDebounceTime) > debounceDelay)
         {
-            if ((millis() - lastDebounceTime) > debounceDelay)
-            {
-                debouncedTouchState = true;
-                isBeingHeld = true;
-                Serial.println("Held");
-            }
+            debouncedTouchState = true;
+            isBeingHeld = true;
+            Serial.println("Held");
         }
     }
 
     if (isBeingHeld)
     {
-        int touch1 = touchRead(TOUCH_1_SEGMENT_PIN);
-        int touch2 = touchRead(TOUCH_2_SEGMENT_PIN);
-        int touch3 = touchRead(TOUCH_3_SEGMENT_PIN);
-        int touch4 = touchRead(TOUCH_4_SEGMENT_PIN);
-        int touch5 = touchRead(TOUCH_5_SEGMENT_PIN);
+        int touch1 = -1;
+        int touch2 = -1;
+        int touch3 = -1;
+        int touch4 = -1;
+        int touch5 = -1;
+
+        if (lastFirstSegment)
+            touch1 = touchRead(TOUCH_1_SEGMENT_PIN);
+        if (lastSecondSegment)
+            touch2 = touchRead(TOUCH_2_SEGMENT_PIN);
+        if (lastThirdSegment)
+            touch3 = touchRead(TOUCH_3_SEGMENT_PIN);
+        if (lastFourthSegment)
+            touch4 = touchRead(TOUCH_4_SEGMENT_PIN);
+        if (lastFifthSegment)
+            touch5 = touchRead(TOUCH_5_SEGMENT_PIN);
 
         bool touchCondition = false;
 
         if (checkPower() == true)
         {
-            touchCondition = (touch1 < TOUCH_1_SEGMENT_THRESHOLD ||
-                              touch2 < TOUCH_2_SEGMENT_THRESHOLD ||
-                              touch3 < TOUCH_3_SEGMENT_THRESHOLD ||
-                              touch4 < TOUCH_4_SEGMENT_THRESHOLD ||
-                              touch5 < TOUCH_5_SEGMENT_THRESHOLD);
+            touchCondition = ((touch1 != -1 && touch1 < TOUCH_1_SEGMENT_THRESHOLD) ||
+                              (touch2 != -1 && touch2 < TOUCH_2_SEGMENT_THRESHOLD) ||
+                              (touch3 != -1 && touch3 < TOUCH_3_SEGMENT_THRESHOLD) ||
+                              (touch4 != -1 && touch4 < TOUCH_4_SEGMENT_THRESHOLD) ||
+                              (touch5 != -1 && touch5 < TOUCH_5_SEGMENT_THRESHOLD));
         }
         else
         {
-            touchCondition = (touch1 < TOUCH_1_SEGMENT_THRESHOLD_BAT ||
-                              touch2 < TOUCH_2_SEGMENT_THRESHOLD_BAT ||
-                              touch3 < TOUCH_3_SEGMENT_THRESHOLD_BAT ||
-                              touch4 < TOUCH_4_SEGMENT_THRESHOLD_BAT ||
-                              touch5 < TOUCH_5_SEGMENT_THRESHOLD_BAT);
+            touchCondition = ((touch1 != -1 && touch1 < TOUCH_1_SEGMENT_THRESHOLD_BAT) ||
+                              (touch2 != -1 && touch2 < TOUCH_2_SEGMENT_THRESHOLD_BAT) ||
+                              (touch3 != -1 && touch3 < TOUCH_3_SEGMENT_THRESHOLD_BAT) ||
+                              (touch4 != -1 && touch4 < TOUCH_4_SEGMENT_THRESHOLD_BAT) ||
+                              (touch5 != -1 && touch5 < TOUCH_5_SEGMENT_THRESHOLD_BAT));
         }
 
         if (!touchCondition)
