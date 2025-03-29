@@ -36,24 +36,23 @@ void showTimeTask(void *pvParameters)
       unsigned long currentMillis = millis(); // Get the current time
       int currentHour = hour();
       int currentMinute = minute();
-      if (currentMillis - previousMillis >= interval && powerConnected == true)
+      if (currentMillis - previousMillis >= interval)
       {
         previousMillis = currentMillis;
 
         Serial.println("Reading brightness and dimming Led display accordingly");
 
-        if (powerConnected == true)
-        {
           dimLedDisplay();
-        }
 
-        if (displayON == true && powerConnected == true)
+        if (displayON == true)
         {
           LedDisplay.showNumberDecEx(hour() * 100 + minute(), 0b11100000, true);
         }
       }
       vTaskDelay(10);
     }
+
+    Serial.println("Setting max brightness Led display");
 
     int currentHour = hour();
     int currentMinute = minute();
@@ -65,6 +64,7 @@ void showTimeTask(void *pvParameters)
       {
         int currentHour = hour();
         int currentMinute = minute();
+        Serial.println("uh max");
         LedDisplay.showNumberDecEx(currentHour * 100 + currentMinute, 0b11100000, true);
         vTaskDelay(1000);
       }
@@ -79,6 +79,7 @@ void showTimeTask(void *pvParameters)
       {
         int currentHour = hour();
         int currentMinute = minute();
+        Serial.println("uh max");
         LedDisplay.showNumberDecEx(currentHour * 100 + currentMinute, 0b11100000, true);
         vTaskDelay(1000);
       }

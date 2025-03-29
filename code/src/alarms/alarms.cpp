@@ -51,7 +51,7 @@ void checkAlarms()
   }
   else
   {
-    vTaskDelay(pdMS_TO_TICKS(500));
+    vTaskDelay(pdMS_TO_TICKS(200));
   }
 }
 
@@ -93,7 +93,7 @@ void checkAlarm(int index)
   // Get the current time
   int currentHours = hour();
   int currentMinutes = minute();
-  Serial.print("Check Alarm Function");
+  Serial.println("Check Alarm Function");
 
   // Check if it's time for the alarm
   if (currentHours == alarms[index].hours && currentMinutes == alarms[index].minutes && (ringing == false || lastRingingMinute != currentMinutes || lastRingingHour != currentHours))
@@ -135,8 +135,8 @@ void touchStopAlarm(int hour, bool ringOn)
       Serial.println("stopping alarm");
       vTaskDelay(pdMS_TO_TICKS(5 * 60 * 1000));
       sendOffPostRequest();
-      ringing = false;
     }
+    ringing = false;
     vTaskDelete(Alarm);
   }
 }

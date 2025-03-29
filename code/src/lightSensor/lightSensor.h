@@ -15,6 +15,7 @@ bool checkForNight();
 int getLightState();
 
 extern TaskHandle_t dimmingTaskHandle;
+extern TaskHandle_t oledWakeupTaskHandle;
 extern bool dimmingTaskRunning;
 extern bool maxBrightness;
 extern bool displayON;

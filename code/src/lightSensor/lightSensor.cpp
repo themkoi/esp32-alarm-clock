@@ -14,6 +14,7 @@ bool displayON = true;
 bool inputDetected = false;
 
 TaskHandle_t dimmingTaskHandle;
+TaskHandle_t oledWakeupTaskHandle;
 
 void createDimmingTask()
 {
@@ -38,7 +39,7 @@ void createDimmingTask()
         10000,          /* Stack size in words. */
         NULL,           /* Parameter passed as input of the task */
         2,              /* Priority of the task. */
-        NULL,           /* Task handle. */
+        &oledWakeupTaskHandle,           /* Task handle. */
         1               /* Core where the task should run. */
     );
 }
@@ -53,12 +54,14 @@ void oledWakeupTask(void *pvParameters)
     unsigned long lastActionTime = 0;
     while (true)
     {
-        if (buttons.checkInput())
+        if (buttons.checkInput() || inputDetected)
         {
             vTaskSuspend(dimmingTaskHandle);
+            vTaskResume(LedTask);
             Serial.println("Button pressed");
             Serial.println("Setting max brightness");
 
+            inputDetected = true;
             maxBrightness = true;
             lastActionTime = millis();
 

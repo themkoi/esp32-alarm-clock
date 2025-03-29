@@ -74,17 +74,6 @@ void showMainPage()
     bool fourthSegment = buttons.checkFourthSegment();
     bool fifthSegment = buttons.checkFifthSegment();
 
-    Serial.print("firstSegment: ");
-    Serial.println(firstSegment);
-    Serial.print("secondSegment: ");
-    Serial.println(secondSegment);
-    Serial.print("thirdSegment: ");
-    Serial.println(thirdSegment);
-    Serial.print("fourthSegment: ");
-    Serial.println(fourthSegment);
-    Serial.print("fifthSegment: ");
-    Serial.println(fifthSegment);
-
     if ((firstSegment || secondSegment || thirdSegment || fourthSegment || fifthSegment) && isBeingHeld == false)
     {
         lastFirstSegment = firstSegment;
