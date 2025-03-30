@@ -60,6 +60,8 @@ void manageBattery(void *parameter)
     checkPower();
     if (powerConnected == true)
     {
+      vTaskResume(oledWakeupTaskHandle);
+      vTaskResume(LedTask);
       esp_pm_config_t pm_config = {
           .max_freq_mhz = 80,
           .min_freq_mhz = 10,
