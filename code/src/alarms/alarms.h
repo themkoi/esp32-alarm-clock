@@ -15,7 +15,7 @@ void initialzeAlarmArray();
 struct Alarm {
     bool exists;
     bool enabled;
-    int day;
+    bool days[7]; // One bool for each day (Monday to Sunday)
     int hours;
     int minutes;
     bool soundOn;

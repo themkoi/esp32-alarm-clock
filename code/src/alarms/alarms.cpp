@@ -35,24 +35,24 @@ void createAlarmTask()
 
 void checkAlarms()
 {
-  int currentDay = weekday() - 1; // Adjust to 0-based index
-  Serial.println("current day:" + String(currentDay));
+    int currentDay = weekday() - 1; // Adjust to 0-based index
+    Serial.println("current day:" + String(currentDay));
 
-  for (int i = 0; i < MAX_ALARMS; ++i)
-  {
-    if (alarms[i].day == currentDay && alarms[i].enabled == true && alarms[i].exists == true)
+    for (int i = 0; i < MAX_ALARMS; ++i)
     {
-      checkAlarm(i);
+        if (alarms[i].days[currentDay] && alarms[i].enabled && alarms[i].exists)
+        {
+            checkAlarm(i);
+        }
     }
-  }
-  if (powerConnected == true)
-  {
-    vTaskDelay(pdMS_TO_TICKS(1 * 1000));
-  }
-  else
-  {
-    vTaskDelay(pdMS_TO_TICKS(200));
-  }
+    if (powerConnected == true)
+    {
+        vTaskDelay(pdMS_TO_TICKS(1 * 1000));
+    }
+    else
+    {
+        vTaskDelay(pdMS_TO_TICKS(200));
+    }
 }
 
 void checkAlarmsTask(void *pvParameters)
@@ -136,6 +136,7 @@ void touchStopAlarm(int hour, bool ringOn)
       vTaskDelay(pdMS_TO_TICKS(5 * 60 * 1000));
       sendOffPostRequest();
     }
+    delay(60000);
     ringing = false;
     vTaskDelete(Alarm);
   }

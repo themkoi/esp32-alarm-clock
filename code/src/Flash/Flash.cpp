@@ -13,7 +13,11 @@ void saveAlarms()
         preferences.putInt(("hours" + String(i)).c_str(), alarms[i].hours);
         preferences.putInt(("minutes" + String(i)).c_str(), alarms[i].minutes);
         preferences.putBool(("soundOn" + String(i)).c_str(), alarms[i].soundOn);
-        preferences.putInt(("day" + String(i)).c_str(), alarms[i].day);
+        
+        // Save the days array
+        for (int day = 0; day < 7; ++day) {
+            preferences.putBool(("day" + String(i) + "_" + String(day)).c_str(), alarms[i].days[day]);
+        }
 
         Serial.print("Saved Alarm ");
         Serial.print(i);
@@ -27,8 +31,16 @@ void saveAlarms()
         Serial.print(alarms[i].minutes);
         Serial.print(", soundOn=");
         Serial.print(alarms[i].soundOn);
-        Serial.print(", day=");
-        Serial.println(alarms[i].day);
+        
+        // Print saved days
+        Serial.print(", days=");
+        for (int day = 0; day < 7; ++day) {
+            Serial.print(alarms[i].days[day] ? "1" : "0");
+            if (day < 6) {
+                Serial.print(",");
+            }
+        }
+        Serial.println();
     }
 
     preferences.end();
@@ -45,7 +57,11 @@ void readAlarms()
         alarms[i].hours = preferences.getInt(("hours" + String(i)).c_str(), 0);
         alarms[i].minutes = preferences.getInt(("minutes" + String(i)).c_str(), 0);
         alarms[i].soundOn = preferences.getBool(("soundOn" + String(i)).c_str(), false);
-        alarms[i].day = preferences.getInt(("day" + String(i)).c_str(), 0);
+
+        // Read the days array
+        for (int day = 0; day < 7; ++day) {
+            alarms[i].days[day] = preferences.getBool(("day" + String(i) + "_" + String(day)).c_str(), false);
+        }
 
         Serial.print("Alarm ");
         Serial.print(i);
@@ -59,12 +75,21 @@ void readAlarms()
         Serial.print(alarms[i].minutes);
         Serial.print(", soundOn=");
         Serial.print(alarms[i].soundOn);
-        Serial.print(", day=");
-        Serial.println(alarms[i].day);
+        
+        // Print loaded days
+        Serial.print(", days=");
+        for (int day = 0; day < 7; ++day) {
+            Serial.print(alarms[i].days[day] ? "1" : "0");
+            if (day < 6) {
+                Serial.print(",");
+            }
+        }
+        Serial.println();
     }
 
     preferences.end();
 }
+
 
 void saveOtaValue(bool Value)
 {
