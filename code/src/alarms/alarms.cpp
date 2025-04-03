@@ -8,6 +8,7 @@ void createRiningingTask();
 
 void sendOnPostRequest();
 void sendOffPostRequest();
+void sendTogglePostRequest();
 
 void checkAlarm(int index);
 void checkAlarmsTask(void *pvParameters);
@@ -145,7 +146,7 @@ void touchStopAlarm(int hour, bool ringOn)
 
 void ringAlarm(void *parameter)
 {
-  unsigned long startTime = millis() + 180000;
+  unsigned long startTime = millis() + 180000; // 15 minutes from now
   bool ringOn = buzzerEnabled;
 
   int currentHour = hour();
@@ -160,6 +161,8 @@ void ringAlarm(void *parameter)
     sendOnPostRequest();
   }
   Serial.println("Starting Alarm");
+
+  unsigned long lastToggleRequestTime = startTime;
 
   while (true)
   {
@@ -180,6 +183,17 @@ void ringAlarm(void *parameter)
       }
       vTaskDelay(100);
     }
+
+    // After 15 minutes, send toggle requests every 5 seconds
+    if (millis() - startTime >= 900000) // 15 minutes = 900000 ms
+    {
+      if (millis() - lastToggleRequestTime >= 5000) // 5 seconds interval
+      {
+        sendTogglePostRequest();
+        lastToggleRequestTime = millis();
+      }
+    }
+
     touchStopAlarm(currentHour, ringOn);
     Serial.print("help");
     Serial.println(startTime);
@@ -188,6 +202,7 @@ void ringAlarm(void *parameter)
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
+
 
 void sendOnPostRequest()
 {
@@ -228,10 +243,40 @@ void sendOffPostRequest()
     {
       HTTPClient http;
 
-      http.begin("http://192.168.88.74/gateways/4276/RGB/command"); // Specify destination for HTTP request
+      http.begin(LIGHT_IP); // Specify destination for HTTP request
       http.addHeader("Content-Type", "application/json");           // Specify content-type header
 
       int httpResponseCode = http.POST("{\"state\": \"OFF\", \"transition\": 30}"); // Send the actual POST request
+
+      if (httpResponseCode > 0)
+      {
+        String response = http.getString(); // Get the response to the request
+        Serial.println(httpResponseCode);   // Print return code
+        Serial.println(response);           // Print request answer
+      }
+      else
+      {
+        Serial.print("Error on sending POST: ");
+        Serial.println(httpResponseCode);
+      }
+
+      http.end(); // Free resources
+    }
+  }
+}
+
+void sendTogglePostRequest()
+{
+  if ((WiFi.status() == WL_CONNECTED))
+  { // Check WiFi connection status
+    if (WiFi.SSID() == SSID1)
+    {
+      HTTPClient http;
+
+      http.begin(LIGHT_IP); // Specify destination for HTTP request
+      http.addHeader("Content-Type", "application/json");           // Specify content-type header
+
+      int httpResponseCode = http.POST("{\"command\": \"toggle\"}"); // Send the actual POST request
 
       if (httpResponseCode > 0)
       {
