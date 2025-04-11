@@ -27,7 +27,7 @@ void initHardware()
   pinMode(POWER_STATE_PIN, INPUT);
   pinMode(CHARGER_CONTROL_PIN, OUTPUT);
   pinMode(HALL_SWITCH, INPUT);
-  touchSetCycles(0x2000, 0x0800);
+  touchSetCycles(0x2000, 0x2000);
   initButtons();
   initBuzzer();
   initOledDisplay();
