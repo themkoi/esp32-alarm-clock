@@ -146,7 +146,7 @@ void touchStopAlarm(int hour, bool ringOn)
 
 void ringAlarm(void *parameter)
 {
-  unsigned long startTime = millis() + 180000; // 15 minutes from now
+  unsigned long startTime = millis();
   bool ringOn = buzzerEnabled;
 
   int currentHour = hour();
@@ -187,7 +187,7 @@ void ringAlarm(void *parameter)
     // After 15 minutes, send toggle requests every 5 seconds
     if (millis() - startTime >= 900000) // 15 minutes = 900000 ms
     {
-      if (millis() - lastToggleRequestTime >= 5000) // 5 seconds interval
+      if (millis() - lastToggleRequestTime >= 10000) // 5 seconds interval
       {
         sendTogglePostRequest();
         lastToggleRequestTime = millis();

@@ -89,7 +89,7 @@ extern bool OTAEnabled;
 
 #define TIMER_WAKUP_TIME 5000 // How long it will stay awake after waking up from timer
 #define GPIO_WAKUP_TIME 30000 // How long to stay awake after waking up from input
-#define SLEEPING_TIME 35 * 1000000 // In microseconds how long it will sleep for 
+#define SLEEPING_TIME 50 * 1000000 // In microseconds how long it will sleep for 
 
 // Charts
 #define CHART_READINGS 55 // Number of readings to keep
