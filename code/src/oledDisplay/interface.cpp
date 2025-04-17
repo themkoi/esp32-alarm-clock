@@ -710,7 +710,7 @@ void manageAlarms()
 
     auto drawDaySelectionGroup = [&](int16_t x, int16_t y)
     {
-        int startX = 0;
+        int startX = 2;
         labelWidth = 0;
         for (int i = 0; i < 7; i++)
         {
@@ -722,7 +722,7 @@ void manageAlarms()
             {
                 drawDaySelection(startX, y, alarms[alarmIndex].days[i], i, true, false);
             }
-            startX = startX + labelWidth + 6;
+            startX = startX + labelWidth + 5;
         }
     };
 
@@ -745,20 +745,20 @@ void manageAlarms()
         display.setFont(&DejaVu_LGC_Sans_Bold_9);
         if (inDaySelectionMode)
         {
-            drawDaySelectionGroup(1, 53);
+            drawDaySelectionGroup(2, 53);
         }
         else
         {
-            int startX = 0;
+            int startX = 2;
             labelWidth = 0;
             for (int i = 0; i < 7; i++)
             {
                 drawDaySelection(startX, 53, alarms[alarmIndex].days[i], i, false, false);
-                startX = startX + labelWidth + 6;
+                startX = startX + labelWidth + 5;
             }
             if (currentState == 3)
             {
-                display.drawRect(1, (49 - 7 - 2) + 3, 127, 10 + 3, WHITE);
+                display.drawRect(0, (49 - 7 - 3) + 3, 127 - 2, 10 + 4, WHITE);
             }
         }
         display.setTextColor(WHITE, BLACK);
