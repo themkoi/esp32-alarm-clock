@@ -12,7 +12,7 @@ int smoothTouchRead(int pin);
 
 bool checkForNight();
 
-int getLightState();
+int getMmwaveState();
 
 extern TaskHandle_t dimmingTaskHandle;
 extern TaskHandle_t oledWakeupTaskHandle;

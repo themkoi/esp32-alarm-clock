@@ -6,6 +6,7 @@ String getStringRequest(String url)
 {
     WiFiClient client;
     HTTPClient http;
+    http.setTimeout(2000);
     http.begin(client, url);
     int httpResponseCode = http.GET();
     String payload = "";

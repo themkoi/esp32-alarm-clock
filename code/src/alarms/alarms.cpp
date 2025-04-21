@@ -213,7 +213,7 @@ void sendOnPostRequest()
 
       HTTPClient http;
 
-      http.begin(LIGHT_IP);                               // Specify destination for HTTP request
+      http.begin(LIGHT_GATE);                               // Specify destination for HTTP request
       http.addHeader("Content-Type", "application/json"); // Specify content-type header
 
       int httpResponseCode = http.POST("{\"state\": \"ON\", \"transition\": 300}"); // Send the actual POST request
@@ -243,7 +243,7 @@ void sendOffPostRequest()
     {
       HTTPClient http;
 
-      http.begin(LIGHT_IP); // Specify destination for HTTP request
+      http.begin(LIGHT_GATE); // Specify destination for HTTP request
       http.addHeader("Content-Type", "application/json");           // Specify content-type header
 
       int httpResponseCode = http.POST("{\"state\": \"OFF\", \"transition\": 30}"); // Send the actual POST request
@@ -273,7 +273,7 @@ void sendTogglePostRequest()
     {
       HTTPClient http;
 
-      http.begin(LIGHT_IP); // Specify destination for HTTP request
+      http.begin(LIGHT_GATE); // Specify destination for HTTP request
       http.addHeader("Content-Type", "application/json");           // Specify content-type header
 
       int httpResponseCode = http.POST("{\"command\": \"toggle\"}"); // Send the actual POST request

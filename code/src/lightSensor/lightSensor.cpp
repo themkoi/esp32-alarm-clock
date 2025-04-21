@@ -47,7 +47,7 @@ void createDimmingTask()
 bool dimmed = false;
 
 float lightLevel = 0.0;
-int lightState = 0;
+int mmwaveState = 0;
 
 void oledWakeupTask(void *pvParameters)
 {
@@ -150,7 +150,7 @@ void dimmingTask(void *pvParameters)
 
         if (currentMillis - previousMillisState >= intervalState && WiFi.isConnected() && powerConnected && WiFi.SSID() == SSID1)
         {
-            lightState = getLightState();
+            mmwaveState = getMmwaveState();
             previousMillisState = currentMillis;
             delay(100);
         }
@@ -195,7 +195,7 @@ void dimOledDisplay()
     Serial.println("raw light level: " + String(lightLevel));
     Serial.println("smoothened light level: " + String(lightLevel));
 
-    if (shouldTurnOffDisplay(lightLevel) == true || (lightState == 0 && WiFi.SSID() == SSID1 && lightState != 3 && WiFi.isConnected() == true))
+    if (shouldTurnOffDisplay(lightLevel) == true || (mmwaveState == 0 && WiFi.SSID() == SSID1 && mmwaveState != 3 && WiFi.isConnected() == true))
     {
         manager.oledDisable();
 
@@ -310,9 +310,9 @@ bool checkForNight()
     }
 }
 
-int getLightState()
+int getMmwaveState()
 {
-    String url = "http://192.168.88.74/gateways/4276/RGB/0";
+    String url = String(LIGHT_IP) + "mmwave";
     String jsonString;
     const int maxRetries = 3;
 
@@ -347,14 +347,14 @@ int getLightState()
         return 3; // Return error code if deserialization fails
     }
 
-    const char *state = jsonDoc["state"]; // Extract the state field
+    bool state = jsonDoc["Detected"];
 
-    if (state != nullptr && strcmp(state, "ON") == 0)
+    if (state)
     {
-        Serial.println("Light is ON");
+        Serial.println("Detected");
         return 1;
     }
-
-    Serial.println("Light is OFF");
+    
+    Serial.println("Not Detected");
     return 0;
 }
