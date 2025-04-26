@@ -8,6 +8,7 @@ void createRiningingTask();
 
 void sendOnPostRequest();
 void sendOffPostRequest();
+void sendTogglePostRequest();
 
 void checkAlarm(int index);
 void checkAlarmsTask(void *pvParameters);
@@ -35,24 +36,24 @@ void createAlarmTask()
 
 void checkAlarms()
 {
-  int currentDay = weekday() - 1; // Adjust to 0-based index
-  Serial.println("current day:" + String(currentDay));
+    int currentDay = weekday() - 1; // Adjust to 0-based index
+    Serial.println("current day:" + String(currentDay));
 
-  for (int i = 0; i < MAX_ALARMS; ++i)
-  {
-    if (alarms[i].day == currentDay && alarms[i].enabled == true && alarms[i].exists == true)
+    for (int i = 0; i < MAX_ALARMS; ++i)
     {
-      checkAlarm(i);
+        if (alarms[i].days[currentDay] && alarms[i].enabled && alarms[i].exists)
+        {
+            checkAlarm(i);
+        }
     }
-  }
-  if (powerConnected == true)
-  {
-    vTaskDelay(pdMS_TO_TICKS(1 * 1000));
-  }
-  else
-  {
-    vTaskDelay(pdMS_TO_TICKS(500));
-  }
+    if (powerConnected == true)
+    {
+        vTaskDelay(pdMS_TO_TICKS(1 * 1000));
+    }
+    else
+    {
+        vTaskDelay(pdMS_TO_TICKS(200));
+    }
 }
 
 void checkAlarmsTask(void *pvParameters)
@@ -93,7 +94,7 @@ void checkAlarm(int index)
   // Get the current time
   int currentHours = hour();
   int currentMinutes = minute();
-  Serial.print("Check Alarm Function");
+  Serial.println("Check Alarm Function");
 
   // Check if it's time for the alarm
   if (currentHours == alarms[index].hours && currentMinutes == alarms[index].minutes && (ringing == false || lastRingingMinute != currentMinutes || lastRingingHour != currentHours))
@@ -135,8 +136,9 @@ void touchStopAlarm(int hour, bool ringOn)
       Serial.println("stopping alarm");
       vTaskDelay(pdMS_TO_TICKS(5 * 60 * 1000));
       sendOffPostRequest();
-      ringing = false;
     }
+    delay(60000);
+    ringing = false;
     vTaskDelete(Alarm);
   }
 }
@@ -144,14 +146,14 @@ void touchStopAlarm(int hour, bool ringOn)
 
 void ringAlarm(void *parameter)
 {
-  unsigned long startTime = millis() + 180000;
+  unsigned long startTime = millis();
   bool ringOn = buzzerEnabled;
 
   int currentHour = hour();
   int currentMinute = minute();
 
-  int alarmMelody[] = {NOTE_A5, NOTE_A5, NOTE_A6, NOTE_A6, NOTE_A6, NOTE_A6, NOTE_A4, NOTE_A4};
-  int alarmDurations[] = {4, 4, 4, 7, 7, 7, 4, 4};
+  int alarmMelody[] = {NOTE_C7, NOTE_C7, NOTE_B7, NOTE_B7, NOTE_B7, NOTE_B7, NOTE_G6, NOTE_G6};
+  int alarmDurations[] = {8, 8, 8, 12, 12, 12, 8, 8};
   alarmStartTime = millis();
 
   if (!(currentHour >= 11 && currentHour <= 21) || ringOn == false)
@@ -159,6 +161,8 @@ void ringAlarm(void *parameter)
     sendOnPostRequest();
   }
   Serial.println("Starting Alarm");
+
+  unsigned long lastToggleRequestTime = startTime;
 
   while (true)
   {
@@ -179,6 +183,17 @@ void ringAlarm(void *parameter)
       }
       vTaskDelay(100);
     }
+
+    // After 15 minutes, send toggle requests every 5 seconds
+    if (millis() - startTime >= 900000) // 15 minutes = 900000 ms
+    {
+      if (millis() - lastToggleRequestTime >= 10000) // 5 seconds interval
+      {
+        sendTogglePostRequest();
+        lastToggleRequestTime = millis();
+      }
+    }
+
     touchStopAlarm(currentHour, ringOn);
     Serial.print("help");
     Serial.println(startTime);
@@ -187,6 +202,7 @@ void ringAlarm(void *parameter)
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
+
 
 void sendOnPostRequest()
 {
@@ -197,7 +213,7 @@ void sendOnPostRequest()
 
       HTTPClient http;
 
-      http.begin(LIGHT_IP);                               // Specify destination for HTTP request
+      http.begin(LIGHT_GATE);                               // Specify destination for HTTP request
       http.addHeader("Content-Type", "application/json"); // Specify content-type header
 
       int httpResponseCode = http.POST("{\"state\": \"ON\", \"transition\": 300}"); // Send the actual POST request
@@ -227,10 +243,40 @@ void sendOffPostRequest()
     {
       HTTPClient http;
 
-      http.begin("http://192.168.88.74/gateways/4276/RGB/command"); // Specify destination for HTTP request
+      http.begin(LIGHT_GATE); // Specify destination for HTTP request
       http.addHeader("Content-Type", "application/json");           // Specify content-type header
 
       int httpResponseCode = http.POST("{\"state\": \"OFF\", \"transition\": 30}"); // Send the actual POST request
+
+      if (httpResponseCode > 0)
+      {
+        String response = http.getString(); // Get the response to the request
+        Serial.println(httpResponseCode);   // Print return code
+        Serial.println(response);           // Print request answer
+      }
+      else
+      {
+        Serial.print("Error on sending POST: ");
+        Serial.println(httpResponseCode);
+      }
+
+      http.end(); // Free resources
+    }
+  }
+}
+
+void sendTogglePostRequest()
+{
+  if ((WiFi.status() == WL_CONNECTED))
+  { // Check WiFi connection status
+    if (WiFi.SSID() == SSID1)
+    {
+      HTTPClient http;
+
+      http.begin(LIGHT_GATE); // Specify destination for HTTP request
+      http.addHeader("Content-Type", "application/json");           // Specify content-type header
+
+      int httpResponseCode = http.POST("{\"command\": \"toggle\"}"); // Send the actual POST request
 
       if (httpResponseCode > 0)
       {

@@ -39,8 +39,8 @@ struct savedDailyForecastData {
 extern bool isWeatherAvailable;
 extern savedDailyForecastData weatherDailyForecastData[MAX_DAYS]; // Days / Data for these days
 
-void syncDailyWeather();
-void syncCurrentWeather();
+bool syncDailyWeather();
+bool syncCurrentWeather();
 
 void deleteWeatherTask();
 

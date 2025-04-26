@@ -7,8 +7,11 @@ void showMainPage();
 void showScreensaver();
 void setupScreensaver();
 extern bool showMainPageFlag;
+extern bool displayedWeather;
 extern void turnOffScreensaver();
 void cyclePages();
+void cyclePagesDown();
+void cyclePagesUp();
 
 void showFirstPage();
 void showForecastPage();

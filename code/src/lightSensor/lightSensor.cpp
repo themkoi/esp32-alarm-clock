@@ -1,6 +1,7 @@
 #include "defines.h"
 
-void dimmingFunction(void *pvParameters);
+void dimmingTask(void *pvParameters);
+void oledWakeupTask(void *pvParameters);
 void dimOledDisplay();
 void dimLedDisplay();
 
@@ -12,7 +13,8 @@ bool displayON = true;
 
 bool inputDetected = false;
 
-TaskHandle_t dimmingTask;
+TaskHandle_t dimmingTaskHandle;
+TaskHandle_t oledWakeupTaskHandle;
 
 void createDimmingTask()
 {
@@ -22,113 +24,147 @@ void createDimmingTask()
     }
     Serial.print("creating dimmingTask");
     xTaskCreatePinnedToCore(
-        dimmingFunction, /* Task function. */
-        "DimTask",       /* String with name of task. */
-        10000,           /* Stack size in words. */
-        NULL,            /* Parameter passed as input of the task */
-        1,               /* Priority of the task. */
-        &dimmingTask,    /* Task handle. */
-        1                /* Core where the task should run. */
+        dimmingTask,        /* Task function. */
+        "DimTask",          /* String with name of task. */
+        10000,              /* Stack size in words. */
+        NULL,               /* Parameter passed as input of the task */
+        1,                  /* Priority of the task. */
+        &dimmingTaskHandle, /* Task handle. */
+        1                   /* Core where the task should run. */
+    );
+
+    xTaskCreatePinnedToCore(
+        oledWakeupTask, /* Task function. */
+        "DimTask",      /* String with name of task. */
+        10000,          /* Stack size in words. */
+        NULL,           /* Parameter passed as input of the task */
+        2,              /* Priority of the task. */
+        &oledWakeupTaskHandle,           /* Task handle. */
+        1               /* Core where the task should run. */
     );
 }
 
 bool dimmed = false;
 
 float lightLevel = 0.0;
+int mmwaveState = 0;
 
-void dimmingFunction(void *pvParameters)
+void oledWakeupTask(void *pvParameters)
 {
-    unsigned long intervalLight = 60000;
-    unsigned long previousMillisLight = 0;
-
-    unsigned long previousMillisDimming = 0;
-    unsigned long intervalDimming = 30000;
-
     unsigned long lastActionTime = 0;
     while (true)
     {
-        dimmingTaskRunning = true;
-
-        while (true)
+        if (buttons.checkInput() || inputDetected)
         {
-            unsigned long currentMillis = millis(); // Get the current time
-            if (currentMillis - previousMillisLight >= intervalLight)
-            {
-                for (int i = 0; i < CHART_READINGS - 1; i++)
-                {
-                    lightArray[i] = lightArray[i + 1];
-                }
-
-                // Add the new reading to the end of the array
-                lightArray[CHART_READINGS - 1] = getLightLevel(); // Replace with your temperature reading function
-                previousMillisLight = currentMillis;
-            }
-
-            if (currentMillis - previousMillisDimming >= intervalDimming && powerConnected == true)
-            {
-                lightLevel = getLightLevel();
-                dimOledDisplay();
-                maxBrightness = false;
-
-                Serial.println("touch level: " + String(touchRead(TOUCH_BUTTON_PIN)));
-
-                Serial.println("Reading brightness and dimming oled accordingly: " + String(lightLevel));
-                previousMillisDimming = currentMillis;
-            }
-            vTaskDelay(10);
-            if (checkForInput() == true)
-            {
-                inputDetected = true;
-                manager.oledEnable();
-                delay(50);
-                break;
-            }
-        }
-        if (checkPower() == true)
-        {
+            vTaskSuspend(dimmingTaskHandle);
+            vTaskResume(LedTask);
             Serial.println("Button pressed");
-            Serial.println("touch level: " + String(touchRead(TOUCH_BUTTON_PIN)));
+            Serial.println("Setting max brightness");
 
-            Serial.println("setting max brightness");
-            vTaskDelay(pdMS_TO_TICKS(20));
-
+            inputDetected = true;
             maxBrightness = true;
             lastActionTime = millis();
-            vTaskDelay(pdMS_TO_TICKS(350));
-            if (dimmed == true)
+
+            if (manager.dimmed)
             {
                 manager.oledFadeIn();
                 manager.oledEnable();
-                dimmed = false;
             }
 
-            vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(100));
+
             while (millis() - lastActionTime < DIM_DELAY)
             {
+                vTaskDelay(pdMS_TO_TICKS(5));
 
-                vTaskDelay(10);
-                if (checkForInput() == true)
+                if (buttons.checkInput() == true)
                 {
                     lastActionTime = millis();
-                    if (dimmed == true)
+
+                    if (manager.dimmed)
                     {
                         manager.oledFadeIn();
-                        dimmed = false;
                     }
-                    if (manager.ScreenEnabled == false)
+
+                    if (!manager.ScreenEnabled)
                     {
                         manager.oledEnable();
                     }
-                    vTaskDelay(10);
-                    while (checkForInput() == true)
+
+                    vTaskDelay(pdMS_TO_TICKS(5));
+
+                    if (buttons.checkInput() == true)
                     {
                         lastActionTime = millis();
                     }
                 }
             }
+
             dimOledDisplay();
+            lightLevel = getLightLevel();
             inputDetected = false;
         }
+        else
+        {
+            eTaskState dimmingTaskState = eTaskGetState(dimmingTaskHandle);
+            if (dimmingTaskState == eSuspended)
+            {
+                vTaskResume(dimmingTaskHandle);
+            }
+            delay(10);
+        }
+    }
+}
+
+void dimmingTask(void *pvParameters)
+{
+    unsigned long intervalLight = 60000;
+    unsigned long previousMillisLight = 0;
+
+    unsigned long previousMillisDimming = 0;
+    unsigned long intervalDimming = 1000;
+
+    unsigned long previousMillisState = 0;
+    unsigned long intervalState = 30000;
+
+    while (true)
+    {
+        dimmingTaskRunning = true;
+        unsigned long currentMillis = millis();
+
+        if (currentMillis - previousMillisLight >= INTERVAL_CHARTS)
+        {
+            lightLevel = getLightLevel();
+            for (int i = 0; i < CHART_READINGS - 1; i++)
+            {
+                lightArray[i] = lightArray[i + 1];
+            }
+            lightArray[CHART_READINGS - 1] = lightLevel;
+            previousMillisLight = currentMillis;
+        }
+        else if (currentMillis - previousMillisLight >= intervalDimming)
+        {
+            lightLevel = getLightLevel();
+            previousMillisLight = currentMillis;
+        }
+
+        if (currentMillis - previousMillisState >= intervalState && WiFi.isConnected() && powerConnected && WiFi.SSID() == SSID1)
+        {
+            mmwaveState = getMmwaveState();
+            previousMillisState = currentMillis;
+            delay(100);
+        }
+
+        if (currentMillis - previousMillisDimming >= intervalDimming && powerConnected)
+        {
+            dimOledDisplay();
+            maxBrightness = false;
+
+            Serial.println("dimming OLED accordingly: " + String(lightLevel));
+            previousMillisDimming = currentMillis;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
@@ -156,17 +192,16 @@ void dimOledDisplay()
 {
     int currentHour = hour();
     int currentMinute = minute();
-    Serial.println("raw light level: " + String(getLightLevel()));
+    Serial.println("raw light level: " + String(lightLevel));
     Serial.println("smoothened light level: " + String(lightLevel));
 
-    if (shouldTurnOffDisplay(getLightLevel()) == true || (getLightState() == false && WiFi.SSID() == SSID1))
+    if (shouldTurnOffDisplay(lightLevel) == true || (mmwaveState == 0 && WiFi.SSID() == SSID1 && mmwaveState != 3 && WiFi.isConnected() == true))
     {
         manager.oledDisable();
 
-        if (dimmed == false)
+        if (manager.dimmed == false)
         {
             manager.oledFadeOut();
-            dimmed = true;
             delay(50);
         }
         delay(50);
@@ -175,14 +210,41 @@ void dimOledDisplay()
     {
         manager.oledEnable();
 
-        if (dimmed == false)
+        if (manager.dimmed == false)
         {
             manager.oledFadeOut();
-            dimmed = true;
         }
     }
+}
 
-    Serial.println("display off");
+static int ledLastBrightness = LED_BRIGHTNESS_MIN;
+
+int mapWithHysteresis(int lightLevel)
+{
+    if (lightLevel <= LED_DISABLE_THRESHOLD)
+    {
+        ledLastBrightness = LED_BRIGHTNESS_MIN;
+        return ledLastBrightness;
+    }
+
+    // Manual linear mapping (same as map function)
+    int newBrightness = (lightLevel - LED_DIM_THRESHOLD) * (LED_BRIGHTNESS_MAX - LED_BRIGHTNESS_MIN) /
+                            (LED_MAX_BRIGHTNESS - LED_DIM_THRESHOLD) +
+                        LED_BRIGHTNESS_MIN;
+
+    // Constrain brightness within valid range
+    newBrightness = constrain(newBrightness, LED_BRIGHTNESS_MIN, LED_BRIGHTNESS_MAX);
+
+    if (newBrightness > ledLastBrightness + LED_HYSTERESIS)
+    {
+        ledLastBrightness = newBrightness;
+    }
+    else if (newBrightness < ledLastBrightness - LED_HYSTERESIS)
+    {
+        ledLastBrightness = newBrightness;
+    }
+
+    return ledLastBrightness;
 }
 
 void dimLedDisplay()
@@ -203,7 +265,7 @@ void dimLedDisplay()
         else if (lightLevel > LED_DIM_THRESHOLD)
         {
             displayON = true;
-            LedDisplay.setBrightness(map(constrain(lightLevel, LED_DIM_THRESHOLD, 100), LED_DIM_THRESHOLD, 100, 0, 7));
+            LedDisplay.setBrightness(mapWithHysteresis(lightLevel));
             Serial.println("Brightness of Led display " + String(map(constrain(lightLevel, 0, LED_DIM_THRESHOLD), 0, LED_DIM_THRESHOLD, 0, 7)));
         }
         else
@@ -219,65 +281,6 @@ float getLightLevel()
 {
     float currentLightLevel = lightMeter.readBrightnessInLux(); // Read the current light level from BH1750 sensor
     return currentLightLevel;
-}
-
-int touchSamples[NUM_TOUCH_SAMPLES];
-int touchSampleIndex = 0;
-
-int smoothTouchRead(int pin)
-{
-    int sum = 0;
-    touchSamples[touchSampleIndex] = touchRead(pin);
-    touchSampleIndex = (touchSampleIndex + 1) % NUM_TOUCH_SAMPLES;
-
-    for (int i = 0; i < NUM_TOUCH_SAMPLES; i++)
-    {
-        sum += touchSamples[i];
-    }
-
-    return sum / NUM_TOUCH_SAMPLES;
-}
-
-bool checkForInput()
-{
-    int threshold;
-    if (powerConnected == false)
-    {
-        threshold = TOUCH_BUTTON_THRESHOLD_ON_BATTERY;
-    }
-    else if (inputDetected == true)
-    {
-        threshold = TOUCH_BUTTON_THRESHOLD_WHEN_ALREADY_TOUCHED;
-    }
-    else
-    {
-        threshold = TOUCH_BUTTON_THRESHOLD;
-    }
-
-    if (smoothTouchRead(TOUCH_BUTTON_PIN) < threshold ||
-        digitalRead(BUTTON_UP_PIN) == LOW ||
-        digitalRead(BUTTON_DOWN_PIN) == LOW ||
-        digitalRead(BUTTON_CONFIRM_PIN) == LOW ||
-        digitalRead(BUTTON_EXIT_PIN) == LOW)
-    {
-        delay(50);
-        if (smoothTouchRead(TOUCH_BUTTON_PIN) < threshold ||
-            digitalRead(BUTTON_UP_PIN) == LOW ||
-            digitalRead(BUTTON_DOWN_PIN) == LOW ||
-            digitalRead(BUTTON_CONFIRM_PIN) == LOW ||
-            digitalRead(BUTTON_EXIT_PIN) == LOW)
-        {
-            return true;
-        }
-        else
-        {
-            return true;
-        }
-    }
-    else
-    {
-        return false;
-    }
 }
 
 bool checkForNight()
@@ -307,10 +310,33 @@ bool checkForNight()
     }
 }
 
-bool getLightState()
+int getMmwaveState()
 {
-    String url = "http://192.168.88.74/gateways/4276/RGB/0";
-    String jsonString = getStringRequest(url);
+    String url = String(LIGHT_IP) + "mmwave";
+    String jsonString;
+    const int maxRetries = 3;
+
+    for (int attempt = 0; attempt < maxRetries; ++attempt)
+    {
+        jsonString = getStringRequest(url);
+
+        if (jsonString.length() > 0)
+        {
+            break; // Exit the loop if we get a valid response
+        }
+        else
+        {
+            Serial.println("Failed to fetch data, retrying...");
+            delay(1000); // Wait 1 second before retrying
+        }
+    }
+
+    if (jsonString.length() == 0)
+    {
+        Serial.println("Failed to fetch data after multiple attempts.");
+        return 3; // Return an error code if all retries fail
+    }
+
     JsonDocument jsonDoc;
     DeserializationError error = deserializeJson(jsonDoc, jsonString);
 
@@ -318,16 +344,17 @@ bool getLightState()
     {
         Serial.print("deserializeJson() returned ");
         Serial.println(error.c_str());
-        return false; // Return false if deserialization fails
+        return 3; // Return error code if deserialization fails
     }
 
-    const char *state = jsonDoc["state"]; // Extract the state field
+    bool state = jsonDoc["Detected"];
 
-    if (state != nullptr && strcmp(state, "ON") == 0)
+    if (state)
     {
-        Serial.println("Ligh is ON");
-        return true;
+        Serial.println("Detected");
+        return 1;
     }
-    Serial.println("Ligh is OFF");
-    return false;
+    
+    Serial.println("Not Detected");
+    return 0;
 }

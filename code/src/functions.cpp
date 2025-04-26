@@ -83,6 +83,18 @@ String getShortWeekdayName(int weekday)
   return weekdays[weekdayIndex - 1]; // Adjust index to match array (0 = Sunday, 1 = Monday, etc.)
 }
 
+String getShorterWeekdayName(int weekday) {
+  const char *weekdays[] = {"Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"};
+  return weekdays[weekday - 1];
+}
+
+String getShortestWeekdayName(int weekday) {
+  const char *weekdays[] = {"Su", "M", "Tu", "W", "Th", "F", "Sa"};
+  return weekdays[weekday - 1];
+}
+
+
+
 String getNextDayName(int daysAfterToday)
 {
   // Get the current time

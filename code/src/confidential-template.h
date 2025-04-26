@@ -9,6 +9,7 @@
 #define SSID3 ""
 #define PASSWORD3 ""
 
+#define LIGHT_GATE ""
 #define LIGHT_IP ""
 
 // Weather

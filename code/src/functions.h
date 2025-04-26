@@ -12,6 +12,8 @@ String getShortCurrentWeekdayName();
 
 String getWeekdayName(int weekday);
 String getShortWeekdayName(int weekday);
+String getShorterWeekdayName(int weekday);
+String getShortestWeekdayName(int weekday);
 
 String getNextDayName(int daysAfterToday);
 String getShortNextDay(int days);

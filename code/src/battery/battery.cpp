@@ -23,7 +23,7 @@ void createBatteryTask()
       "Battery",     // Task name
       10000,         // Stack size (words)
       NULL,          // Task input parameter
-      2,             // Priority (0 is lowest)
+      3,             // Priority (0 is lowest)
       NULL,          // Task handle
       0              // Core to run the task on (0 or 1)
   );
@@ -60,6 +60,8 @@ void manageBattery(void *parameter)
     checkPower();
     if (powerConnected == true)
     {
+      vTaskResume(oledWakeupTaskHandle);
+      vTaskResume(LedTask);
       esp_pm_config_t pm_config = {
           .max_freq_mhz = 80,
           .min_freq_mhz = 10,
@@ -67,8 +69,15 @@ void manageBattery(void *parameter)
       };
       esp_pm_configure(&pm_config);
       Serial.println("Set pm config");
+      if (previousPowerConnected == false)
+      {
+        buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD);
+        buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD);
+        buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD);
+        buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD);
+        buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD);
+      }
 
-      // Update the previous state
       previousPowerConnected = powerConnected;
       wentToSleep = false;
       preparingForSleep = false;
@@ -84,9 +93,10 @@ void manageBattery(void *parameter)
     }
     else
     {
-      digitalWrite(CHARGER_CONTROL_PIN, LOW); // Disable Charger when power is off
+      digitalWrite(CHARGER_CONTROL_PIN, LOW);
       turnOffWifi();
       vTaskDelay(pdMS_TO_TICKS(500));
+      previousPowerConnected = false;
 
       static unsigned long sleepStartTime = 0;
 
@@ -95,15 +105,20 @@ void manageBattery(void *parameter)
         Serial.println("Preparing to go to sleep in 10 seconds");
         sleepStartTime = millis();
         preparingForSleep = true;
+        buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_BAT);
+        buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_BAT);
+        buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_BAT);
+        buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_BAT);
+        buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_BAT);
       }
 
       if (preparingForSleep == true && wentToSleep == false)
       {
         if (millis() - sleepStartTime >= 10000)
         {
-          if (powerConnected == true)
+          if (powerConnected == true || inputDetected == true)
           {
-            Serial.println("Power Connected, canceling sleep preparation");
+            Serial.println("Power Connected or input detected, canceling sleep preparation");
             preparingForSleep = false;
           }
           else
@@ -118,9 +133,6 @@ void manageBattery(void *parameter)
       checkPower();
       if (wentToSleep == true && powerConnected == false)
       {
-
-        // Handle wakeup cases
-        // Handle wakeup cases
         if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER)
         {
           Serial.println("Woke up from Timer");
@@ -129,12 +141,17 @@ void manageBattery(void *parameter)
 
           int sleepTime = TIMER_WAKUP_TIME;
 
-          while (checkPower() == false && goToSleep == false && ringing == false)
+          while (checkPower() == false && goToSleep == false)
           {
             vTaskDelay(pdMS_TO_TICKS(500));
 
-            if (checkForInput())
+            if (buttons.checkInput())
             {
+              buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_BAT);
+              buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_BAT);
+              buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_BAT);
+              buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_BAT);
+              buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_BAT);
               esp_pm_config_t pm_config = {
                   .max_freq_mhz = 80,
                   .min_freq_mhz = 10,
@@ -143,81 +160,55 @@ void manageBattery(void *parameter)
               esp_pm_configure(&pm_config);
               inputDetected = true;
               manager.oledEnable();
-              LedDisplay.setBrightness(0);
-              int currentHour = hour();
-              int currentMinute = minute();
-              LedDisplay.showNumberDecEx(currentHour * 100 + currentMinute, 0b11100000, true);
-              LedDisplay.setBrightness(0);
-              sleepTime = GPIO_WAKUP_TIME;
-              startTime = millis(); // Reset the timer on input
-            }
-            else
-            {
-              inputDetected = false;
+              vTaskResume(oledWakeupTaskHandle);
+              vTaskResume(LedTask);
             }
 
-            if (millis() - startTime >= sleepTime && !checkPower() && !inputDetected)
+            if (!checkPower() && !inputDetected && !ringing)
             {
               Serial.println("No input detected, going back to sleep...");
               LedDisplay.clear();
               vTaskDelay(pdMS_TO_TICKS(200));
               enableSleep();
-              break; // Exit the loop to allow sleep
+              break;
             }
           }
         }
 
         if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TOUCHPAD && !goToSleep)
         {
+          buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_BAT);
+          buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_BAT);
+          buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_BAT);
+          buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_BAT);
+          buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_BAT);
+          Serial.println("Woke up from touch button");
+          vTaskDelay(pdMS_TO_TICKS(500));
           esp_pm_config_t pm_config = {
               .max_freq_mhz = 80,
               .min_freq_mhz = 10,
               .light_sleep_enable = true,
           };
           esp_pm_configure(&pm_config);
-          Serial.println("Woke up from touch button");
+          inputDetected = true;
           manager.oledEnable();
-          int currentHour = hour();
-          int currentMinute = minute();
-          unsigned long startTime = millis();
+          vTaskResume(oledWakeupTaskHandle);
+          vTaskResume(LedTask);
 
-          LedDisplay.setBrightness(0);
-          LedDisplay.showNumberDecEx(currentHour * 100 + currentMinute, 0b11100000, true);
-          LedDisplay.setBrightness(0);
-          maxBrightness = false;
+         while (checkPower() == false && goToSleep == false)
+         {
+             Serial.println("Touch while running uh " + String(inputDetected));
+             vTaskDelay(pdMS_TO_TICKS(500));
 
-          while (checkPower() == false && goToSleep == false && ringing == false)
-          {
-            vTaskDelay(pdMS_TO_TICKS(500));
-
-            int currentHour = hour();
-            int currentMinute = minute();
-
-            LedDisplay.showNumberDecEx(currentHour * 100 + currentMinute, 0b11100000, true);
-
-            if (checkForInput() == true)
-            {
-              LedDisplay.setBrightness(0);
-              currentHour = hour();
-              currentMinute = minute();
-              LedDisplay.showNumberDecEx(currentHour * 100 + currentMinute, 0b11100000, true);
-              startTime = millis();
-              inputDetected = true;
-            }
-            else
-            {
-              inputDetected = false;
-            }
-
-            if (millis() - startTime >= GPIO_WAKUP_TIME && !inputDetected && !checkPower())
-            {
-              Serial.println("No input detected, going back to sleep...");
-              vTaskDelay(pdMS_TO_TICKS(500));
-              syncESP32RTC();
-              enableSleep();
-              break; // Exit the loop to allow sleep
-            }
-          }
+           if (!checkPower() && !inputDetected && !ringing)
+           {
+             Serial.println("No input detected, going back to sleep...");
+             LedDisplay.clear();
+             vTaskDelay(pdMS_TO_TICKS(200));
+             enableSleep();
+             break;
+           }
+         }
         }
       }
     }
@@ -265,7 +256,19 @@ void initSleep()
 
   esp_sleep_enable_timer_wakeup(SLEEPING_TIME);
 
-  touchSleepWakeUpEnable(TOUCH_BUTTON_PIN, TOUCH_BUTTON_THRESHOLD_ON_BATTERY);
+  touchSleepWakeUpEnable(TOUCH_1_SEGMENT_PIN, TOUCH_1_SEGMENT_THRESHOLD_SLEEP);
+  touchSleepWakeUpEnable(TOUCH_2_SEGMENT_PIN, TOUCH_2_SEGMENT_THRESHOLD_SLEEP);
+  touchSleepWakeUpEnable(TOUCH_3_SEGMENT_PIN, TOUCH_3_SEGMENT_THRESHOLD_SLEEP);
+  touchSleepWakeUpEnable(TOUCH_4_SEGMENT_PIN, TOUCH_4_SEGMENT_THRESHOLD_SLEEP);
+  touchSleepWakeUpEnable(TOUCH_5_SEGMENT_PIN, TOUCH_5_SEGMENT_THRESHOLD_SLEEP);
+
+  buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_SLEEP);
+  buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_SLEEP);
+  buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_SLEEP);
+  buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_SLEEP);
+  buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_SLEEP);
+  delay(100);
+
 
   esp_sleep_enable_touchpad_wakeup();
   initializedSleep = true;
@@ -281,6 +284,9 @@ void listenToSleep()
 {
   if (goToSleep == true)
   {
+    vTaskSuspend(oledWakeupTaskHandle);
+    vTaskSuspend(LedTask);
+    vTaskSuspend(dimmingTaskHandle);
     initSleep();
     Serial.println("Initialized sleep");
     Serial.println("Light Sleep");
@@ -329,22 +335,6 @@ void listenToSleep()
     initializedSleep = false;
     checkPower();
     delay(200);
-    if (checkForInput())
-    {
-      esp_pm_config_t pm_config = {
-          .max_freq_mhz = 80,
-          .min_freq_mhz = 10,
-          .light_sleep_enable = true,
-      };
-      esp_pm_configure(&pm_config);
-      inputDetected = true;
-      manager.oledEnable();
-      LedDisplay.setBrightness(0);
-      int currentHour = hour();
-      int currentMinute = minute();
-      LedDisplay.showNumberDecEx(currentHour * 100 + currentMinute, 0b11100000, true);
-      LedDisplay.setBrightness(0);
-    }
   }
 }
 

@@ -430,7 +430,7 @@
 			(pintype "passive")
 			(uuid "7875db51-23fd-434c-a102-adab34ce535a")
 		)
-		(model "${KIPRJMOD}/3D/B3F-5050.stp"
+		(model "${KIPRJMOD}/../../3D/B3F-5050.stp"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -1011,7 +1011,7 @@
 			(pintype "passive")
 			(uuid "fbdc90d7-9d89-4ca6-b499-53566b8c88ab")
 		)
-		(model "${KIPRJMOD}/3D/B3F-5050.stp"
+		(model "${KIPRJMOD}/../../3D/B3F-5050.stp"
 			(offset
 				(xyz 0 0 0)
 			)

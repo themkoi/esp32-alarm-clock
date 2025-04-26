@@ -30,19 +30,131 @@ int PageNumberToShow = 1;
 int LastPageShown = 1;
 bool displayedWeather = false;
 
-unsigned long previousMillisFirstMenu = 0; // Store the last time the display was updated
-const long intervalFirstMenu = 1000;       // Interval at which to run the code (15 seconds)
+unsigned long previousMillisFirstMenu = 0;
+const long intervalFirstMenu = 1000;
 
+bool isBeingHeld = false;
+bool currentInputState = false;
 bool previousInputState = false;
+long lastDebounceTime = 0;
+bool debouncedTouchState = false;
+
+bool lastFirstSegment = false;
+bool lastSecondSegment = false;
+bool lastThirdSegment = false;
+bool lastFourthSegment = false;
+bool lastFifthSegment = false;
+
+void checkTouchButtons()
+{
+    if (lastFirstSegment || lastSecondSegment)
+    {
+        Serial.println("changing page down");
+        cyclePagesDown();
+    }
+    else if (lastThirdSegment)
+    {
+        PageNumberToShow = 1;
+        Serial.println("setting first page");
+    }
+    else if (lastFourthSegment || lastFifthSegment)
+    {
+        Serial.println("changing page up");
+        cyclePagesUp();
+    }
+}
 
 void showMainPage()
 {
-    bool currentInputState = checkForInput();
-    if (currentInputState == true && previousInputState == false)
+    const unsigned long debounceDelay = 50;
+
+    bool firstSegment = buttons.checkFirstSegment();
+    bool secondSegment = buttons.checkSecondSegment();
+    bool thirdSegment = buttons.checkThirdSegment();
+    bool fourthSegment = buttons.checkFourthSegment();
+    bool fifthSegment = buttons.checkFifthSegment();
+
+    if ((firstSegment || secondSegment || thirdSegment || fourthSegment || fifthSegment) && isBeingHeld == false)
+    {
+        lastFirstSegment = firstSegment;
+        lastSecondSegment = secondSegment;
+        lastThirdSegment = thirdSegment;
+        lastFourthSegment = fourthSegment;
+        lastFifthSegment = fifthSegment;
+
+        turnOffScreensaver();
+        cyclePagesUp();
+
+        if ((millis() - lastDebounceTime) > debounceDelay)
+        {
+            debouncedTouchState = true;
+            isBeingHeld = true;
+            Serial.println("Held");
+        }
+    }
+
+    if (isBeingHeld)
+    {
+        int touch1 = -1;
+        int touch2 = -1;
+        int touch3 = -1;
+        int touch4 = -1;
+        int touch5 = -1;
+
+        if (lastFirstSegment)
+            touch1 = touchRead(TOUCH_1_SEGMENT_PIN);
+        if (lastSecondSegment)
+            touch2 = touchRead(TOUCH_2_SEGMENT_PIN);
+        if (lastThirdSegment)
+            touch3 = touchRead(TOUCH_3_SEGMENT_PIN);
+        if (lastFourthSegment)
+            touch4 = touchRead(TOUCH_4_SEGMENT_PIN);
+        if (lastFifthSegment)
+            touch5 = touchRead(TOUCH_5_SEGMENT_PIN);
+
+        bool touchCondition = false;
+
+        if (checkPower() == true)
+        {
+            touchCondition = ((touch1 != -1 && touch1 < TOUCH_1_SEGMENT_THRESHOLD) ||
+                              (touch2 != -1 && touch2 < TOUCH_2_SEGMENT_THRESHOLD) ||
+                              (touch3 != -1 && touch3 < TOUCH_3_SEGMENT_THRESHOLD) ||
+                              (touch4 != -1 && touch4 < TOUCH_4_SEGMENT_THRESHOLD) ||
+                              (touch5 != -1 && touch5 < TOUCH_5_SEGMENT_THRESHOLD));
+        }
+        else
+        {
+            touchCondition = ((touch1 != -1 && touch1 < TOUCH_1_SEGMENT_THRESHOLD_BAT) ||
+                              (touch2 != -1 && touch2 < TOUCH_2_SEGMENT_THRESHOLD_BAT) ||
+                              (touch3 != -1 && touch3 < TOUCH_3_SEGMENT_THRESHOLD_BAT) ||
+                              (touch4 != -1 && touch4 < TOUCH_4_SEGMENT_THRESHOLD_BAT) ||
+                              (touch5 != -1 && touch5 < TOUCH_5_SEGMENT_THRESHOLD_BAT));
+        }
+
+        if (!touchCondition)
+        {
+            if ((millis() - lastDebounceTime) > debounceDelay)
+            {
+                debouncedTouchState = false;
+                isBeingHeld = false;
+                Serial.println("Released");
+            }
+        }
+    }
+
+    if (debouncedTouchState && !previousInputState)
     {
         turnOffScreensaver();
+        checkTouchButtons();
     }
-    previousInputState = currentInputState;
+
+    if (debouncedTouchState != previousInputState)
+    {
+        lastDebounceTime = millis();
+    }
+
+    previousInputState = debouncedTouchState;
+
     unsigned long currentTime = millis();
     if (PageNumberToShow == 1 || PageNumberToShow == 2 || PageNumberToShow == 3 || PageNumberToShow == 4 || PageNumberToShow == 5)
     {
@@ -110,6 +222,7 @@ void showMainPage()
         if (currentTime - lastExecutionTime >= SCREENSAVER_DURATION)
         {
             lastExecutionTime = currentTime;
+            Serial.println("turn off screenshaver and cycle pages");
             cyclePages();
         }
         else
@@ -121,7 +234,6 @@ void showMainPage()
 
 void turnOffScreensaver()
 {
-    cyclePages();
     displayedWeather = false;
     if (LastPageShown != 1)
     {
@@ -146,10 +258,9 @@ void showFirstPage()
     manager.oledDisplay();
 }
 
-// Function to format the temperature as a string with one decimal place
 auto formatTemperature = [](float minTemp, float maxTemp)
 {
-    char tempStr[6]; // Enough space for "0.0C\0"
+    char tempStr[6];
     float avgTemp = (minTemp + maxTemp) / 2.0;
     dtostrf(avgTemp, 4, 1, tempStr);
     return String(tempStr) + "C";
@@ -189,10 +300,8 @@ void showForecastPage()
 
 void displayWiFiSignal(int x, int y)
 {
-    // Get the RSSI (Received Signal Strength Indicator)
     int32_t rssi = WiFi.RSSI();
 
-    // Select the appropriate icon based on the RSSI value
     const uint8_t *wifiIcon;
 
     if (WiFi.status() != WL_CONNECTED)
@@ -287,6 +396,7 @@ void showSensorPage()
 
 void cyclePages()
 {
+    manager.stopScrolling();
     if (LastPageShown == 1)
     {
         PageNumberToShow = 2;
@@ -306,6 +416,56 @@ void cyclePages()
     else if (LastPageShown == 5)
     {
         PageNumberToShow = 1;
+    }
+}
+
+void cyclePagesDown()
+{
+    manager.stopScrolling();
+    if (LastPageShown == 1)
+    {
+        PageNumberToShow = 2;
+    }
+    else if (LastPageShown == 2)
+    {
+        PageNumberToShow = 3;
+    }
+    else if (LastPageShown == 3)
+    {
+        PageNumberToShow = 4;
+    }
+    else if (LastPageShown == 4)
+    {
+        PageNumberToShow = 5;
+    }
+    else if (LastPageShown == 5)
+    {
+        PageNumberToShow = 1;
+    }
+}
+
+void cyclePagesUp()
+{
+    manager.stopScrolling();
+    if (LastPageShown == 1)
+    {
+        PageNumberToShow = 5;
+    }
+    else if (LastPageShown == 2)
+    {
+        PageNumberToShow = 1;
+    }
+    else if (LastPageShown == 3)
+    {
+        PageNumberToShow = 2;
+    }
+    else if (LastPageShown == 4)
+    {
+        PageNumberToShow = 3;
+    }
+    else if (LastPageShown == 5)
+    {
+        PageNumberToShow = 4;
     }
 }
 
@@ -340,13 +500,11 @@ void showScreensaver()
     int16_t x, y;
     boolean resort = false;
 
-    manager.oledDisplay();
-    manager.stopScrolling();
     display.clearDisplay();
 
     for (i = 0; i < N_FLYERS; i++ && PageNumberToShow == false)
     {
-        if (checkForInput() == true)
+        if (buttons.checkTouch() == true)
         {
             turnOffScreensaver();
             break;
@@ -382,4 +540,5 @@ void showScreensaver()
     {
         qsort(flyer, N_FLYERS, sizeof(struct Flyer), compare);
     }
+    manager.oledDisplay();
 }

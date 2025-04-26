@@ -1267,7 +1267,7 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "clock-pcb.step",
       "svg": "",
       "vrml": ""
     },

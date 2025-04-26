@@ -9,8 +9,9 @@ void initWeatherMenu()
 
 void checkExit()
 {
-    static bool exitHeld = false;
-    if (checkButtonReleased(BUTTON_EXIT_PIN, exitHeld))
+    buttons.checkConfirm();
+
+    if (shouldExitLoop() == true)
     {
         manager.stopScrolling();
         displayed = false;
@@ -20,7 +21,11 @@ void checkExit()
 
 void currentWeatherMenu()
 {
-    currentWeather();
+    if (displayed == false)
+    {
+        currentWeather();
+        displayed = true;
+    }
     checkExit();
 }
 
@@ -53,12 +58,19 @@ void currentWeather()
     display.print(currentWeatherData.windSpeed, 1); // Wind speed with 1 decimal place
     display.print(" m/s ");
     display.print(convertWindDirection(currentWeatherData.windDirection));
-
     // Display the weather condition description
-    display.setCursor(0, SCREEN_HEIGHT - 5);
+    display.setCursor(1, SCREEN_HEIGHT - 5);
     display.setFont(&Roboto_Black_9);
     display.fillRect(0, SCREEN_HEIGHT - 16, SCREEN_WIDTH, 16, SSD1306_BLACK);
-    display.print(currentWeatherData.main); // Print the weather condition description
+    if (isWeatherAvailable == true)
+    {
+        display.print(currentWeatherData.main); // Print the weather condition description
+    }
+    else
+    {
+        display.setCursor(0, SCREEN_HEIGHT - 5);
+        display.print("N/A                     ");
+    }
     display.print("\t");
     display.print("");
 
@@ -110,7 +122,7 @@ void displayWeatherCast(int dayIndex)
 
         if (isWeatherAvailable == true)
         {
-            display.setCursor(0, SCREEN_HEIGHT - 5);
+            display.setCursor(1, SCREEN_HEIGHT - 5);
             display.print(weatherConditionIdToStr(weatherDailyForecastData[dayIndex].weatherConditionId));
             display.print("");
         }
@@ -230,6 +242,7 @@ void wifiDebugMenu()
     centerText(String(WiFi.macAddress()), 63);
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     manager.oledDisplay();
+    delay(10);
 }
 
 void CPUDebugMenu()
@@ -246,6 +259,7 @@ void CPUDebugMenu()
     centerText("Chip model:", 44);
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     manager.oledDisplay();
+    delay(10);
 }
 
 void generalDebugMenu()
@@ -269,4 +283,31 @@ void generalDebugMenu()
     }
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     manager.oledDisplay();
+    delay(10);
+}
+
+void touchDebugMenu()
+{
+    Serial.println("checking Exit");
+    checkExit();
+    Serial.println(" finished checking Exit");
+    display.clearDisplay();
+    centerText("Touch Debug ", 10);
+    display.drawRect(0, SCREEN_HEIGHT / 3 - 8, SCREEN_WIDTH, 2, SSD1306_WHITE);
+    display.setFont(&DejaVu_LGC_Sans_Bold_9);
+    display.setCursor(0, 23);
+    display.println("First Segment " + String(touchRead(TOUCH_1_SEGMENT_PIN)));
+    display.setCursor(0, 33);
+    display.println("Second Segment " + String(touchRead(TOUCH_2_SEGMENT_PIN)));
+    display.setCursor(0, 43);
+    display.println("Third Segment " + String(touchRead(TOUCH_3_SEGMENT_PIN)));
+    display.setCursor(0, 53);
+    display.println("Fourth Segment " + String(touchRead(TOUCH_4_SEGMENT_PIN)));
+    display.setCursor(0, 63);
+    display.println("Fourth Segment " + String(touchRead(TOUCH_5_SEGMENT_PIN)));
+    display.setFont(&DejaVu_LGC_Sans_Bold_10);
+    Serial.println("Starting Display");
+    manager.oledDisplay();
+    Serial.println("Finished Display");
+    delay(10);
 }
