@@ -8,7 +8,10 @@
         "ostream": "cpp",
         "sstream": "cpp",
         "streambuf": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "cmake.configureOnOpen": false

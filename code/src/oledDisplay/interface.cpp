@@ -73,7 +73,7 @@ for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.t
     auto &entry = data.isSubmenu ? data.currentSubmenu[i] : data.entryList[i];
 
     if (entry.font)
-        display.setFont(entry.font); // Set font for this entry
+        display.setFont(entry.font);
 
     String text = data.isSubmenu ? data.currentSubmenu[i].text : data.entryList[i].text;
 
@@ -83,11 +83,10 @@ for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.t
     
     int lineHeight = (textWidth > SCREEN_WIDTH) ? (textHeight * 2) : textHeight;
     
-    // Adjust line height for smaller fonts
     if (textHeight < 10) {
-        lineHeight = textHeight + 2; // Adds padding for small fonts
+        lineHeight = textHeight + 2;
     } else {
-        lineHeight = textHeight; // Keeps default height for normal fonts
+        lineHeight = textHeight;
     }
     
     if (usedHeight + lineHeight > availableHeight)
@@ -121,7 +120,7 @@ for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.t
         auto &entry = data.isSubmenu ? data.currentSubmenu[i] : data.entryList[i];
 
         if (entry.font)
-            display.setFont(entry.font); // Set font for this entry
+            display.setFont(entry.font);
 
         String displayText = data.isSubmenu ? data.currentSubmenu[i].text : data.entryList[i].text;
         int16_t x1, y1;
@@ -130,15 +129,14 @@ for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.t
         Serial.println("width:" + String(textWidth));
         Serial.println("height:" + String(textHeight));
         
-        // Adjust for smaller fonts to ensure proper line height
         if (textHeight < 10) {
-            textHeight = 10; // Adjust textHeight to avoid too small font rendering
+            textHeight = 10;
         }
         
         float floatLines = (float)textHeight / (float)BUTTON_HEIGHT;
         int lines = round(floatLines);
         if (lines == 0) {
-            lines = 1;  // Ensure at least one line
+            lines = 1;
         }
         
         int boxHeight = (lines * BUTTON_HEIGHT) + (lines * BUTTONS_OFFSET);
@@ -154,12 +152,11 @@ for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.t
         display.setCursor(1, y);
         display.print(displayText);
         
-        // Increase Y based on text height and lines
         y += boxHeight + BUTTONS_OFFSET;
           
     }
 
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     display.setTextColor(SSD1306_WHITE);
 }
@@ -770,7 +767,7 @@ void manageAlarms()
 
         drawBitmapOption(SCREEN_WIDTH - 30, 20, !inDaySelectionMode && currentState == 5, !inDaySelectionMode && isEditing && currentState == 5);
 
-        manager.oledDisplay();
+        manager.sendOledAction(OLED_DISPLAY);
     }
 
     if (inDaySelectionMode)

@@ -67,8 +67,8 @@ void oledWakeupTask(void *pvParameters)
 
             if (manager.dimmed)
             {
-                manager.oledFadeIn();
-                manager.oledEnable();
+                manager.sendOledAction(OLED_FADE_IN);
+                manager.sendOledAction(OLED_ENABLE);
             }
 
             vTaskDelay(pdMS_TO_TICKS(100));
@@ -83,12 +83,12 @@ void oledWakeupTask(void *pvParameters)
 
                     if (manager.dimmed)
                     {
-                        manager.oledFadeIn();
+                        manager.sendOledAction(OLED_FADE_IN);
                     }
 
                     if (!manager.ScreenEnabled)
                     {
-                        manager.oledEnable();
+                        manager.sendOledAction(OLED_ENABLE);
                     }
 
                     vTaskDelay(pdMS_TO_TICKS(5));
@@ -197,22 +197,22 @@ void dimOledDisplay()
 
     if (shouldTurnOffDisplay(lightLevel) == true || (mmwaveState == 0 && WiFi.SSID() == SSID1 && mmwaveState != 3 && WiFi.isConnected() == true))
     {
-        manager.oledDisable();
+        manager.sendOledAction(OLED_DISABLE);
 
         if (manager.dimmed == false)
         {
-            manager.oledFadeOut();
+            manager.sendOledAction(OLED_FADE_OUT);
             delay(50);
         }
         delay(50);
     }
     else
     {
-        manager.oledEnable();
+        manager.sendOledAction(OLED_ENABLE);
 
         if (manager.dimmed == false)
         {
-            manager.oledFadeOut();
+            manager.sendOledAction(OLED_FADE_OUT);
         }
     }
 }

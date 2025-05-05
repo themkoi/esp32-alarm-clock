@@ -298,7 +298,7 @@ void showChart(float *data, uint dataCount, String chartName)
     }
 
     showSideText(bothList, bothSize);
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
 }
 
 void loopGraph(const char *title, float *dataArray, size_t dataSize, float yMin, float yMax, float (*readValue)())

@@ -165,14 +165,14 @@ void showMainPage()
             previousMillisFirstMenu = millis() - intervalFirstMenu;
             displayedWeather = false;
             Serial.println("resetting menus");
-            manager.stopScrolling();
+            manager.sendOledAction(OLED_STOP_SCROLL);
             setupScreensaver();
         }
         else
         {
             if (PageNumberToShow == 1)
             {
-                manager.stopScrolling();
+                manager.sendOledAction(OLED_STOP_SCROLL);
                 LastPageShown = 1;
                 if (currentTime - previousMillisFirstMenu >= intervalFirstMenu)
                 {
@@ -185,7 +185,7 @@ void showMainPage()
                 displayedWeather = true;
                 LastPageShown = 2;
                 display.clearDisplay();
-                manager.oledDisplay();
+                manager.sendOledAction(OLED_DISPLAY);
                 currentWeather();
             }
             else if (PageNumberToShow == 3)
@@ -237,7 +237,7 @@ void turnOffScreensaver()
     displayedWeather = false;
     if (LastPageShown != 1)
     {
-        manager.stopScrolling();
+        manager.sendOledAction(OLED_STOP_SCROLL);
     }
 
     previousMillisFirstMenu = millis() - intervalFirstMenu;
@@ -255,7 +255,7 @@ void showFirstPage()
     centerText(getCurrentMonthName(), SCREEN_HEIGHT / 2 + 10);
     centerText("Light: " + String(getLightLevel()) + " lux", SCREEN_HEIGHT / 2 + 23);
     display.drawLine(26 - 8, 45, 102 + 8, 45, WHITE);
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
 }
 
 auto formatTemperature = [](float minTemp, float maxTemp)
@@ -295,7 +295,7 @@ void showForecastPage()
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     centerText(String(day()) + "." + String(month()) + "." + String(year()), 10);
     delay(10);
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
 }
 
 void displayWiFiSignal(int x, int y)
@@ -367,7 +367,7 @@ void showInfoPage()
     display.setCursor(5 + 35 + 50, 25);
     display.print(String(getBatteryVoltage()) + "V");
     delay(10);
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
 }
 
@@ -391,12 +391,12 @@ void showSensorPage()
     display.print("Hum: " + String(readHumidity()) + "%");
     display.drawBitmap(SCREEN_WIDTH - 24 - 10, 18 + 24, house_raindrops_24x24, 24, 24, BLACK, WHITE);
 
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
 }
 
 void cyclePages()
 {
-    manager.stopScrolling();
+    manager.sendOledAction(OLED_STOP_SCROLL);
     if (LastPageShown == 1)
     {
         PageNumberToShow = 2;
@@ -421,7 +421,7 @@ void cyclePages()
 
 void cyclePagesDown()
 {
-    manager.stopScrolling();
+    manager.sendOledAction(OLED_STOP_SCROLL);
     if (LastPageShown == 1)
     {
         PageNumberToShow = 2;
@@ -446,7 +446,7 @@ void cyclePagesDown()
 
 void cyclePagesUp()
 {
-    manager.stopScrolling();
+    manager.sendOledAction(OLED_STOP_SCROLL);
     if (LastPageShown == 1)
     {
         PageNumberToShow = 5;
@@ -540,5 +540,5 @@ void showScreensaver()
     {
         qsort(flyer, N_FLYERS, sizeof(struct Flyer), compare);
     }
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
 }

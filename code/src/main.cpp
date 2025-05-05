@@ -27,7 +27,7 @@ void setup()
     display.clearDisplay();
     centerText("Connecting To WiFi", 30);
     centerText("Starting OTA", 40);
-    manager.oledDisplay();
+    display.display();
     while (WiFi.status() != WL_CONNECTED)
     {
       delay(100);
@@ -38,7 +38,7 @@ void setup()
     centerText("OTA:Enabled!", 10);
     centerText("IP Address:", 20);
     centerText(WiFi.localIP().toString(), 30);
-    manager.oledDisplay();
+    display.display();
     String ipAddress = WiFi.localIP().toString();
 
     String lastTwoDigits = ipAddress.substring(ipAddress.length() - 2);
@@ -56,15 +56,15 @@ void setup()
       centerText("IP Address:", 20);
       centerText(WiFi.localIP().toString(), 30);
       centerText("Running", 40);
-      manager.oledDisplay();
+      manager.sendOledAction(OLED_DISPLAY);
       ArduinoOTA.handle();
       display.clearDisplay();
       centerText("OTA:Enabled!", 10);
       centerText("IP Address:", 20);
       centerText(WiFi.localIP().toString(), 30);
-      manager.oledDisplay();
+      manager.sendOledAction(OLED_DISPLAY);
     }
-    manager.oledDisable();
+    manager.sendOledAction(OLED_DISABLE);
   }
   if (!OTAEnabled)
   {

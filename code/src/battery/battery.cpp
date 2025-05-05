@@ -159,7 +159,7 @@ void manageBattery(void *parameter)
               };
               esp_pm_configure(&pm_config);
               inputDetected = true;
-              manager.oledEnable();
+              manager.sendOledAction(OLED_ENABLE);
               vTaskResume(oledWakeupTaskHandle);
               vTaskResume(LedTask);
             }
@@ -191,7 +191,7 @@ void manageBattery(void *parameter)
           };
           esp_pm_configure(&pm_config);
           inputDetected = true;
-          manager.oledEnable();
+          manager.sendOledAction(OLED_ENABLE);
           vTaskResume(oledWakeupTaskHandle);
           vTaskResume(LedTask);
 
@@ -295,7 +295,7 @@ void listenToSleep()
     maxBrightness = false;
     inputDetected = false;
     delay(500);
-    manager.oledDisable();
+    manager.sendOledAction(OLED_DISABLE);
     display.ssd1306_command(SSD1306_DISPLAYOFF); // Just to make sure because manager can take a bit before reacting if many write operations are ordered
     delay(500);
     LedDisplay.setBrightness(0);

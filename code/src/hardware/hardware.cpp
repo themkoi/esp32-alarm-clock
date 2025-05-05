@@ -49,19 +49,19 @@ void initOledDisplay()
   display.setTextSize(1);
   display.setCursor(0, 0);
   display.setTextColor(SSD1306_WHITE);
-  manager.oledDisplay();
+  manager.sendOledAction(OLED_DISPLAY);
 
   centerText("Oled Initialized", SCREEN_HEIGHT / 2);
   centerText((resetReasonToString(esp_reset_reason())), 10);
 
-  manager.oledDisplay();
-  manager.oledEnable();
+  manager.sendOledAction(OLED_DISPLAY);
+  manager.sendOledAction(OLED_ENABLE);
   display.ssd1306_command(0x81);
   display.ssd1306_command(130);
   delay(100);
   display.ssd1306_command(0xD9);
   display.ssd1306_command(30);
-  manager.oledFadeOut();
+  manager.sendOledAction(OLED_FADE_OUT);
   Serial.println("OLed display initialized");
 }
 
