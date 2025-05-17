@@ -5,14 +5,6 @@ float readTemperature()
 
     uint32_t timestamp = millis();
     sht4.getEvent(&humidity, &temp); // Populate temp and humidity objects with fresh data
-    timestamp = millis() - timestamp;
-
-    Serial.print("Temperature: ");
-    Serial.print(temp.temperature);
-    Serial.println(" degrees C");
-
-    Serial.print("Read duration (ms): ");
-    Serial.println(timestamp);
     return temp.temperature;
 }
 
@@ -22,14 +14,6 @@ float readHumidity()
 
     uint32_t timestamp = millis();
     sht4.getEvent(&humidity, &temp); // Populate temp and humidity objects with fresh data
-    timestamp = millis() - timestamp;
-
-    Serial.print("Humidity: ");
-    Serial.print(humidity.relative_humidity);
-    Serial.println("% rH");
-
-    Serial.print("Read duration (ms): ");
-    Serial.println(timestamp);
     return humidity.relative_humidity;
 }
 
