@@ -56,6 +56,7 @@ void resetPreviousItems()
     display.clearDisplay();
 }
 
+
 void showMenu()
 {
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
@@ -68,35 +69,46 @@ void showMenu()
     int usedHeight = 0;
     int tmpItemsOnPage = maxItems;
 
-    for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.totalMenus); i++)
-    {
-        auto &entry = data.isSubmenu ? data.currentSubmenu[i] : data.entryList[i];
-        if (entry.font) display.setFont(entry.font);
+for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.totalMenus); i++)
+{
+    auto &entry = data.isSubmenu ? data.currentSubmenu[i] : data.entryList[i];
 
-        String text = entry.text;
+    if (entry.font)
+        display.setFont(entry.font); // Set font for this entry
 
-        int16_t x1, y1;
-        uint16_t textWidth, textHeight;
-        display.getTextBounds(text, 0, 0, &x1, &y1, &textWidth, &textHeight);
+    String text = data.isSubmenu ? data.currentSubmenu[i].text : data.entryList[i].text;
 
-        int lineHeight = (textHeight < 10) ? (textHeight + 2) : textHeight;
-
-        if (usedHeight + lineHeight > availableHeight) {
-            tmpItemsOnPage = max(minItems, i);
-            break;
-        }
-
-        usedHeight += lineHeight + BUTTONS_OFFSET;
-        display.setFont(&DejaVu_LGC_Sans_Bold_10);
+    int16_t x1, y1;
+    uint16_t textWidth, textHeight;
+    display.getTextBounds(text, 0, 0, &x1, &y1, &textWidth, &textHeight);
+    
+    int lineHeight = (textWidth > SCREEN_WIDTH) ? (textHeight * 2) : textHeight;
+    
+    if (textHeight < 10) {
+        lineHeight = textHeight + 2;
+    } else {
+        lineHeight = textHeight;
     }
+    
+    if (usedHeight + lineHeight > availableHeight)
+    {
+        tmpItemsOnPage = max(minItems, i);
+        break;
+    }
+    
+    usedHeight += lineHeight + BUTTONS_OFFSET;
+    display.setFont(&DejaVu_LGC_Sans_Bold_10);
+}
 
     data.itemsOnPage = tmpItemsOnPage;
+
     int startingButton = data.currentButton - (data.currentButton % data.itemsOnPage);
     currentPage = data.currentButton / data.itemsOnPage;
     pageNumber = ((data.isSubmenu ? data.submenuCount : data.totalMenus) + data.itemsOnPage - 1) / data.itemsOnPage;
 
     display.setCursor(0, 0);
     display.setTextColor(SSD1306_WHITE);
+
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     display.setCursor(0, 10);
     display.print(String(currentPage + 1) + "/" + String(pageNumber));
@@ -107,36 +119,46 @@ void showMenu()
     for (int i = startingButton; i < startingButton + data.itemsOnPage && i < (data.isSubmenu ? data.submenuCount : data.totalMenus); i++)
     {
         auto &entry = data.isSubmenu ? data.currentSubmenu[i] : data.entryList[i];
-        if (entry.font) display.setFont(entry.font);
 
-        String displayText = entry.text;
+        if (entry.font)
+            display.setFont(entry.font); // Set font for this entry
 
+        String displayText = data.isSubmenu ? data.currentSubmenu[i].text : data.entryList[i].text;
         int16_t x1, y1;
         uint16_t textWidth, textHeight;
         display.getTextBounds(displayText, 0, 0, &x1, &y1, &textWidth, &textHeight);
-        if (textHeight < 10) textHeight = 10;
-
-        int boxHeight = textHeight + BUTTONS_OFFSET * 2;
+        Serial.println("width:" + String(textWidth));
+        Serial.println("height:" + String(textHeight));
+        
+        // Adjust for smaller fonts to ensure proper line height
+        if (textHeight < 10) {
+            textHeight = 10; // Adjust textHeight to avoid too small font rendering
+        }
+        
+        float floatLines = (float)textHeight / (float)BUTTON_HEIGHT;
+        int lines = round(floatLines);
+        if (lines == 0) {
+            lines = 1;  // Ensure at least one line
+        }
+        
+        int boxHeight = (lines * BUTTON_HEIGHT) + (lines * BUTTONS_OFFSET);
         int boxY = y - 8;
-
+        
         if (data.currentButton == i) {
             display.fillRect(0, boxY, SCREEN_WIDTH, boxHeight, SSD1306_WHITE);
             display.setTextColor(SSD1306_BLACK);
         } else {
             display.setTextColor(SSD1306_WHITE);
         }
+        
+        int verticalOffset = (boxHeight - textHeight) / 2;
 
-// Option 1: Half baseline offset correction
-//int verticalOffset = ((boxHeight - textHeight) / 2) - y1 / 2;
-
-// Option 2: No baseline offset correction
- int verticalOffset = (boxHeight - textHeight) / 2;
-
-display.setCursor(1, y + verticalOffset);
-display.print(displayText);
-
-
+        display.setCursor(1, y + verticalOffset);
+        display.print(displayText);
+        
+        // Increase Y based on text height and lines
         y += boxHeight + BUTTONS_OFFSET;
+          
     }
 
     manager.sendOledAction(OLED_DISPLAY);
