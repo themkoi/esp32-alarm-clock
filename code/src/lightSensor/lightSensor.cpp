@@ -65,10 +65,12 @@ void oledWakeupTask(void *pvParameters)
             maxBrightness = true;
             lastActionTime = millis();
 
+            manager.sendOledAction(OLED_ENABLE);
+
             if (manager.dimmed)
             {
+                delay(5);
                 manager.sendOledAction(OLED_FADE_IN);
-                manager.sendOledAction(OLED_ENABLE);
             }
 
             vTaskDelay(pdMS_TO_TICKS(100));

@@ -7,9 +7,24 @@ timeval tv;
 
 void setup()
 {
+  Serial.begin(115200);
+  initHardware();
   Serial.println("Initializing Hardware");
 
-  initHardware();
+  if (!LittleFS.begin())
+  {
+    Serial.println("LittleFS mount failed, formatting...");
+    if (!LittleFS.format())
+    {
+      Serial.println("LittleFS format failed");
+    }
+    if (!LittleFS.begin())
+    {
+      Serial.println("LittleFS mount failed after format");
+    }
+  }
+  Serial.println("LittleFS mounted successfully");
+
   WiFi.mode(WIFI_STA);
   initWifi();
   readOtaValue();
@@ -82,7 +97,6 @@ void setup()
   initMenus();
   delay(100);
 }
-
 
 void loop()
 {

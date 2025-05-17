@@ -22,7 +22,6 @@ void initHardware()
   };
   esp_pm_configure(&pm_config);
   delay(2000);
-  Serial.begin(115200);
   pinMode(VOLTAGE_DIVIDER_PIN, INPUT);
   pinMode(POWER_STATE_PIN, INPUT);
   pinMode(CHARGER_CONTROL_PIN, OUTPUT);

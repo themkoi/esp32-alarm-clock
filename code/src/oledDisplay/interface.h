@@ -10,6 +10,7 @@ void showMenu();
 void addNewAlarm();
 
 bool shouldExitLoop();
+void resetToDefaultMenu();
 
 extern bool menuRunning;
 extern bool idleEnabled;

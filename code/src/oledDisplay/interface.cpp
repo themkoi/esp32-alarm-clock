@@ -68,46 +68,35 @@ void showMenu()
     int usedHeight = 0;
     int tmpItemsOnPage = maxItems;
 
-for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.totalMenus); i++)
-{
-    auto &entry = data.isSubmenu ? data.currentSubmenu[i] : data.entryList[i];
-
-    if (entry.font)
-        display.setFont(entry.font);
-
-    String text = data.isSubmenu ? data.currentSubmenu[i].text : data.entryList[i].text;
-
-    int16_t x1, y1;
-    uint16_t textWidth, textHeight;
-    display.getTextBounds(text, 0, 0, &x1, &y1, &textWidth, &textHeight);
-    
-    int lineHeight = (textWidth > SCREEN_WIDTH) ? (textHeight * 2) : textHeight;
-    
-    if (textHeight < 10) {
-        lineHeight = textHeight + 2;
-    } else {
-        lineHeight = textHeight;
-    }
-    
-    if (usedHeight + lineHeight > availableHeight)
+    for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.totalMenus); i++)
     {
-        tmpItemsOnPage = max(minItems, i);
-        break;
+        auto &entry = data.isSubmenu ? data.currentSubmenu[i] : data.entryList[i];
+        if (entry.font) display.setFont(entry.font);
+
+        String text = entry.text;
+
+        int16_t x1, y1;
+        uint16_t textWidth, textHeight;
+        display.getTextBounds(text, 0, 0, &x1, &y1, &textWidth, &textHeight);
+
+        int lineHeight = (textHeight < 10) ? (textHeight + 2) : textHeight;
+
+        if (usedHeight + lineHeight > availableHeight) {
+            tmpItemsOnPage = max(minItems, i);
+            break;
+        }
+
+        usedHeight += lineHeight + BUTTONS_OFFSET;
+        display.setFont(&DejaVu_LGC_Sans_Bold_10);
     }
-    
-    usedHeight += lineHeight + BUTTONS_OFFSET;
-    display.setFont(&DejaVu_LGC_Sans_Bold_10);
-}
 
     data.itemsOnPage = tmpItemsOnPage;
-
     int startingButton = data.currentButton - (data.currentButton % data.itemsOnPage);
     currentPage = data.currentButton / data.itemsOnPage;
     pageNumber = ((data.isSubmenu ? data.submenuCount : data.totalMenus) + data.itemsOnPage - 1) / data.itemsOnPage;
 
     display.setCursor(0, 0);
     display.setTextColor(SSD1306_WHITE);
-
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     display.setCursor(0, 10);
     display.print(String(currentPage + 1) + "/" + String(pageNumber));
@@ -118,48 +107,43 @@ for (int i = 0; i < maxItems && i < (data.isSubmenu ? data.submenuCount : data.t
     for (int i = startingButton; i < startingButton + data.itemsOnPage && i < (data.isSubmenu ? data.submenuCount : data.totalMenus); i++)
     {
         auto &entry = data.isSubmenu ? data.currentSubmenu[i] : data.entryList[i];
+        if (entry.font) display.setFont(entry.font);
 
-        if (entry.font)
-            display.setFont(entry.font);
+        String displayText = entry.text;
 
-        String displayText = data.isSubmenu ? data.currentSubmenu[i].text : data.entryList[i].text;
         int16_t x1, y1;
         uint16_t textWidth, textHeight;
         display.getTextBounds(displayText, 0, 0, &x1, &y1, &textWidth, &textHeight);
-        Serial.println("width:" + String(textWidth));
-        Serial.println("height:" + String(textHeight));
-        
-        if (textHeight < 10) {
-            textHeight = 10;
-        }
-        
-        float floatLines = (float)textHeight / (float)BUTTON_HEIGHT;
-        int lines = round(floatLines);
-        if (lines == 0) {
-            lines = 1;
-        }
-        
-        int boxHeight = (lines * BUTTON_HEIGHT) + (lines * BUTTONS_OFFSET);
+        if (textHeight < 10) textHeight = 10;
+
+        int boxHeight = textHeight + BUTTONS_OFFSET * 2;
         int boxY = y - 8;
-        
+
         if (data.currentButton == i) {
             display.fillRect(0, boxY, SCREEN_WIDTH, boxHeight, SSD1306_WHITE);
             display.setTextColor(SSD1306_BLACK);
         } else {
             display.setTextColor(SSD1306_WHITE);
         }
-        
-        display.setCursor(1, y);
-        display.print(displayText);
-        
+
+// Option 1: Half baseline offset correction
+//int verticalOffset = ((boxHeight - textHeight) / 2) - y1 / 2;
+
+// Option 2: No baseline offset correction
+ int verticalOffset = (boxHeight - textHeight) / 2;
+
+display.setCursor(1, y + verticalOffset);
+display.print(displayText);
+
+
         y += boxHeight + BUTTONS_OFFSET;
-          
     }
 
     manager.sendOledAction(OLED_DISPLAY);
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     display.setTextColor(SSD1306_WHITE);
 }
+
 
 
 
@@ -215,6 +199,7 @@ void startIdleAnimation()
         {
             currentState = ANIMATING;
             Serial.println("Main Page started...");
+            resetToDefaultMenu();
             lastAnimationTime = millis();
         }
 
@@ -506,6 +491,20 @@ void removeMenuEntry(int index)
     }
 }
 
+void resetToDefaultMenu()
+{
+    stackPointer = -1;
+    data.isSubmenu = false;
+    data.currentSubmenu = nullptr;
+    data.currentButton = 0;
+    currentMenuItem = 0;
+    pageNumber = 0;
+    currentPage = 0;
+    data.menuName = "Main Menu";
+    showMenu();
+}
+
+
 void editCurrentMenuEntry(String newText, void (*newFunction)() = nullptr, void (*newLoopFunction)() = nullptr)
 {
     entryMenu *currentEntry;
@@ -590,7 +589,7 @@ String getAlarmEntryName(int index)
         if (alarms[index].days[i])
         {
             if (!days.isEmpty())
-                days += ",";
+                days += ".";
             days += getShortestWeekdayName(i + 1);
         }
     }
@@ -857,6 +856,7 @@ void deleteAlarmStatic(int index)
     alarms[index].exists = false;
     removeMenuEntry(data.currentButton);
     alarmsSubmenu->count = alarmsSubmenu->count - 1;
+    data.currentButton = 0;
     exitLoopFunction = true;
 }
 
@@ -872,7 +872,7 @@ void addNewAlarm()
             data.currentSubmenu = alarmsSubmenu->entries;
             data.submenuCount = alarmsSubmenu->count;
 
-            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &DejaVu_LGC_Sans_Bold_9);
+            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &font4pt7b);
 
             // alarmsSubmenu->name = menuName;
             data.submenuCount++;
@@ -910,7 +910,7 @@ void initAlarmMenus()
         {
             Serial.println("New alarm added. " + String(i));
 
-            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &DejaVu_LGC_Sans_Bold_9);
+            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &font4pt7b);
 
             // alarmsSubmenu->name = menuName;
             delay(1);
@@ -935,7 +935,7 @@ void menuTask(void *parameter)
     startedLoop = true;
     while (true)
     {
-        if (goToSleep == false && (manager.ScreenEnabled == true || inputDetected == true))
+        if (goToSleep == false)
         {
             handleMenus();
         }
@@ -1007,7 +1007,7 @@ void initMenus()
     xTaskCreatePinnedToCore(
         menuTask,    // Task function
         "Menu Task", // Task name
-        2048,        // Stack size in bytes
+        4096,        // Stack size in bytes
         NULL,        // Task parameter
         3,           // Task priority
         NULL,        // Task handle

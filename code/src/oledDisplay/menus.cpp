@@ -64,7 +64,7 @@ void currentWeather()
     display.fillRect(0, SCREEN_HEIGHT - 16, SCREEN_WIDTH, 16, SSD1306_BLACK);
     if (isWeatherAvailable == true)
     {
-        display.print(currentWeatherData.main); // Print the weather condition description
+        display.print(" " + currentWeatherData.main); // Print the weather condition description
     }
     else
     {
@@ -141,6 +141,7 @@ void displayWeatherCast(int dayIndex)
 
 String convertWindDirection(uint16_t degrees)
 {
+    Serial.println("Current wind direction" + String(degrees));
     if (degrees >= 337.5 || degrees < 22.5)
     {
         return "N";
