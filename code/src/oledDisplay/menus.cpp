@@ -9,7 +9,6 @@ void initWeatherMenu()
 
 void checkExit()
 {
-    buttons.checkConfirm();
 
     if (shouldExitLoop() == true)
     {

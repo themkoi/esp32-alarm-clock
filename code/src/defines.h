@@ -16,7 +16,7 @@
 #include <Preferences.h>
 #include <Adafruit_SHT4x.h>
 #include <oledManager.h>
-#include <buttonManager.h>
+// #include <buttonManager.h>
 #include <Grafici.h>
 
 #include "esp_pm.h"
@@ -102,7 +102,52 @@ extern bool OTAEnabled;
 
 #include "confidential.h"
 
+#define MENU_PIN GPIO_NUM_25
+#define BACK_PIN GPIO_NUM_26
+#define DOWN_PIN GPIO_NUM_13
+#define UP_PIN GPIO_NUM_12
+
+#define SMALL_BUTTON_DELAY_MS 15
+
+#define BUTTON_TASK_DELAY 10 // In ms, lower means faster button detection but more cpu usage
+#define ADD_BUTTON_DELAY 1
+#define BUTTON_LONG_PRESS_MS 1000     // Duration until long press registers in miliseconds
+
+#define BUT_STATE HIGH
+#define BUT_CLICK_STATE LOW
+#define BUTTON_INTER_COND FALLING
+
+#define BUTTON_UP_PIN GPIO_NUM_12
+#define BUTTON_DOWN_PIN GPIO_NUM_13
+#define BUTTON_CONFIRM_PIN GPIO_NUM_25
+#define BUTTON_EXIT_PIN GPIO_NUM_26
+
+#define TOUCH_1_SEGMENT_PIN GPIO_NUM_33
+#define TOUCH_1_SEGMENT_THRESHOLD 23
+#define TOUCH_2_SEGMENT_PIN GPIO_NUM_4
+#define TOUCH_2_SEGMENT_THRESHOLD 25
+#define TOUCH_3_SEGMENT_PIN GPIO_NUM_32
+#define TOUCH_3_SEGMENT_THRESHOLD 25
+#define TOUCH_4_SEGMENT_PIN GPIO_NUM_27
+#define TOUCH_4_SEGMENT_THRESHOLD 27
+#define TOUCH_5_SEGMENT_PIN GPIO_NUM_2
+#define TOUCH_5_SEGMENT_THRESHOLD 33
+
+#define TOUCH_1_SEGMENT_THRESHOLD_BAT 28
+#define TOUCH_2_SEGMENT_THRESHOLD_BAT 30
+#define TOUCH_3_SEGMENT_THRESHOLD_BAT 32
+#define TOUCH_4_SEGMENT_THRESHOLD_BAT 35
+#define TOUCH_5_SEGMENT_THRESHOLD_BAT 40
+
+#define TOUCH_1_SEGMENT_THRESHOLD_SLEEP 27
+#define TOUCH_2_SEGMENT_THRESHOLD_SLEEP 28
+#define TOUCH_3_SEGMENT_THRESHOLD_SLEEP 31
+#define TOUCH_4_SEGMENT_THRESHOLD_SLEEP 33
+#define TOUCH_5_SEGMENT_THRESHOLD_SLEEP 36
+
 #include "hardware/hardware.h"
+#include "hardware/input/buttons.h"
+#include "hardware/input/combinations.h"
 #include "functions.h"
 #include "WiFi/WiFi.h"
 #include "NTP/NTP.h"

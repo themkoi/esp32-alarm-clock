@@ -68,11 +68,17 @@ void showMainPage()
 {
     const unsigned long debounceDelay = 50;
 
-    bool firstSegment = buttons.checkFirstSegment();
-    bool secondSegment = buttons.checkSecondSegment();
-    bool thirdSegment = buttons.checkThirdSegment();
-    bool fourthSegment = buttons.checkFourthSegment();
-    bool fifthSegment = buttons.checkFifthSegment();
+    // bool firstSegment = buttons.checkFirstSegment();
+    // bool secondSegment = buttons.checkSecondSegment();
+    // bool thirdSegment = buttons.checkThirdSegment();
+    // bool fourthSegment = buttons.checkFourthSegment();
+    // bool fifthSegment = buttons.checkFifthSegment();
+
+    bool firstSegment = false;
+    bool secondSegment = false;
+    bool thirdSegment = false;
+    bool fourthSegment = false;
+    bool fifthSegment = false;
 
     if ((firstSegment || secondSegment || thirdSegment || fourthSegment || fifthSegment) && isBeingHeld == false)
     {
@@ -504,11 +510,11 @@ void showScreensaver()
 
     for (i = 0; i < N_FLYERS; i++ && PageNumberToShow == false)
     {
-        if (buttons.checkTouch() == true)
-        {
-            turnOffScreensaver();
-            break;
-        }
+        // if (buttons.checkTouch() == true)
+        // {
+        //     turnOffScreensaver();
+        //     break;
+        // }
 
         f = (flyer[i].frame == 255) ? 4 : (flyer[i].frame++ & 3);
         x = flyer[i].x / 16;

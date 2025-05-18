@@ -85,7 +85,7 @@ void initButtons()
   pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);
   pinMode(BUTTON_CONFIRM_PIN, INPUT_PULLUP);
   pinMode(BUTTON_EXIT_PIN, INPUT_PULLUP);
-  buttons.createTask();
+  turnOnButtons();
   Serial.println("Buttons initialized");
 }
 

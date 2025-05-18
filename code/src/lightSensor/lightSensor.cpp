@@ -54,7 +54,7 @@ void oledWakeupTask(void *pvParameters)
     unsigned long lastActionTime = 0;
     while (true)
     {
-        if (buttons.checkInput() || inputDetected)
+        if (useAllButtons() != None)
         {
             vTaskSuspend(dimmingTaskHandle);
             vTaskResume(LedTask);
@@ -79,7 +79,7 @@ void oledWakeupTask(void *pvParameters)
             {
                 vTaskDelay(pdMS_TO_TICKS(5));
 
-                if (buttons.checkInput() == true)
+                if (useAllButtons() != None)
                 {
                     lastActionTime = millis();
 
@@ -95,7 +95,7 @@ void oledWakeupTask(void *pvParameters)
 
                     vTaskDelay(pdMS_TO_TICKS(5));
 
-                    if (buttons.checkInput() == true)
+                    if (useAllButtons() != None)
                     {
                         lastActionTime = millis();
                     }

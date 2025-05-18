@@ -71,11 +71,11 @@ void manageBattery(void *parameter)
       Serial.println("Set pm config");
       if (previousPowerConnected == false)
       {
-        buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD);
-        buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD);
-        buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD);
-        buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD);
-        buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD);
+        // buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD);
+        // buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD);
+        // buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD);
+        // buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD);
+        // buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD);
       }
 
       previousPowerConnected = powerConnected;
@@ -105,11 +105,11 @@ void manageBattery(void *parameter)
         Serial.println("Preparing to go to sleep in 10 seconds");
         sleepStartTime = millis();
         preparingForSleep = true;
-        buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_BAT);
-        buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_BAT);
-        buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_BAT);
-        buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_BAT);
-        buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_BAT);
+        // buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_BAT);
+        // buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_BAT);
+        // buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_BAT);
+        // buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_BAT);
+        // buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_BAT);
       }
 
       if (preparingForSleep == true && wentToSleep == false)
@@ -145,13 +145,13 @@ void manageBattery(void *parameter)
           {
             vTaskDelay(pdMS_TO_TICKS(500));
 
-            if (buttons.checkInput())
+            // if (useAllButtons() != None())
             {
-              buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_BAT);
-              buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_BAT);
-              buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_BAT);
-              buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_BAT);
-              buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_BAT);
+              // buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_BAT);
+              // buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_BAT);
+              // buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_BAT);
+              // buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_BAT);
+              // buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_BAT);
               esp_pm_config_t pm_config = {
                   .max_freq_mhz = 80,
                   .min_freq_mhz = 10,
@@ -177,11 +177,11 @@ void manageBattery(void *parameter)
 
         if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TOUCHPAD && !goToSleep)
         {
-          buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_BAT);
-          buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_BAT);
-          buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_BAT);
-          buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_BAT);
-          buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_BAT);
+          // buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_BAT);
+          // buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_BAT);
+          // buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_BAT);
+          // buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_BAT);
+          // buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_BAT);
           Serial.println("Woke up from touch button");
           vTaskDelay(pdMS_TO_TICKS(500));
           esp_pm_config_t pm_config = {
@@ -262,11 +262,11 @@ void initSleep()
   touchSleepWakeUpEnable(TOUCH_4_SEGMENT_PIN, TOUCH_4_SEGMENT_THRESHOLD_SLEEP);
   touchSleepWakeUpEnable(TOUCH_5_SEGMENT_PIN, TOUCH_5_SEGMENT_THRESHOLD_SLEEP);
 
-  buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_SLEEP);
-  buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_SLEEP);
-  buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_SLEEP);
-  buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_SLEEP);
-  buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_SLEEP);
+  // buttons.setTouchInterrupt(TOUCH_1_SEGMENT_PIN,TOUCH_1_SEGMENT_THRESHOLD_SLEEP);
+  // buttons.setTouchInterrupt(TOUCH_2_SEGMENT_PIN,TOUCH_2_SEGMENT_THRESHOLD_SLEEP);
+  // buttons.setTouchInterrupt(TOUCH_3_SEGMENT_PIN,TOUCH_3_SEGMENT_THRESHOLD_SLEEP);
+  // buttons.setTouchInterrupt(TOUCH_4_SEGMENT_PIN,TOUCH_4_SEGMENT_THRESHOLD_SLEEP);
+  // buttons.setTouchInterrupt(TOUCH_5_SEGMENT_PIN,TOUCH_5_SEGMENT_THRESHOLD_SLEEP);
   delay(100);
 
 

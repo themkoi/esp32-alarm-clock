@@ -32,8 +32,8 @@ void setup()
   syncTimeLibWithRTC();
   LedDisplay.showNumberDecEx(hour() * 100 + minute(), 0b11100000, true);
 
-  int upButtonState = digitalRead(BUTTON_UP_PIN);
-  if (upButtonState == LOW || OTAEnabled == true)
+  int upinkButtonStates = digitalRead(BUTTON_UP_PIN);
+  if (upinkButtonStates == LOW || OTAEnabled == true)
   {
     setCpuFrequencyMhz(240); // stable 160,80,240
     Serial.println("button is pressed, enabling OTA");
