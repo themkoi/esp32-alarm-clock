@@ -34,6 +34,18 @@ extern bool OTAEnabled;
 #define CLK  18 
 #define DIO  19 
 
+// WiFi
+#define SIZE_WIFI_CRED_STAT 3
+
+#define WIFI_SYNC_TIME 50000
+
+#define WIFI_COUNTRY_FIX 1 // Enable this to 1 to enable the fix
+/*
+Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA","CH","CN","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HK","HR","HU", "IE","IN","IS","IT","JP","KR","LI","LT","LU","LV","MT","MX","NL","NO","NZ","PL","PT", "RO","SE","SI","SK","TW","US"
+*/
+#define WIFI_COUNTRY_CODE "PL"
+#define WIFI_COUNTRY_FORCE false // This should be false, you can set it to true to check if something starts working
+
 // NTP
 //#define TIME_OFFSET_S 3600            // Time offset in seconds, use this as timezones
 // Just change the timezones in NTP.cpp file im too lazy beh

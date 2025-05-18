@@ -26,7 +26,7 @@ void createAlarmTask()
   xTaskCreatePinnedToCore(
       checkAlarmsTask, // Function to implement the task
       "Alarms",        // Task name
-      10000,           // Stack size (words)
+      2048,           // Stack size (words)
       NULL,            // Task input parameter
       1,               // Priority (0 is lowest)
       NULL,            // Task handle
@@ -116,7 +116,7 @@ void createRiningingTask()
   xTaskCreatePinnedToCore(
       ringAlarm,   // Function to implement the task
       "ringAlarm", // Name of the task
-      10000,       // Stack size (words)
+      2048,       // Stack size (words)
       NULL,        // Parameter to pass
       2,           // Priority
       &Alarm,      // Task handle

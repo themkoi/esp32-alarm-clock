@@ -21,7 +21,7 @@ void createBatteryTask()
   xTaskCreatePinnedToCore(
       manageBattery, // Function to implement the task
       "Battery",     // Task name
-      10000,         // Stack size (words)
+      4096,         // Stack size (words)
       NULL,          // Task input parameter
       3,             // Priority (0 is lowest)
       NULL,          // Task handle

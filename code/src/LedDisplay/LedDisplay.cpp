@@ -16,7 +16,7 @@ void createLedDisplayTask()
   xTaskCreatePinnedToCore(
       showTimeTask, /* Task function. */
       "DimTask",    /* String with name of task. */
-      10000,        /* Stack size in words. */
+      2048,        /* Stack size in words. */
       NULL,         /* Parameter passed as input of the task */
       1,            /* Priority of the task. */
       &LedTask,     /* Task handle. */
