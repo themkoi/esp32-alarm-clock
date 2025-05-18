@@ -4,6 +4,7 @@
 #include "fonts/fonts.h"
 
 #include <Arduino.h>
+#include <LittleFS.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <TM1637Display.h>
@@ -15,8 +16,9 @@
 #include <Preferences.h>
 #include <Adafruit_SHT4x.h>
 #include <oledManager.h>
-#include <buttonManager.h>
+// #include <buttonManager.h>
 #include <Grafici.h>
+#include <Timezone.h>
 
 #include "esp_pm.h"
 #include "esp_wifi.h"
@@ -33,7 +35,8 @@ extern bool OTAEnabled;
 #define DIO  19 
 
 // NTP
-#define TIME_OFFSET_S 3600            // Time offset in seconds, use this as timezones
+//#define TIME_OFFSET_S 3600            // Time offset in seconds, use this as timezones
+// Just change the timezones in NTP.cpp file im too lazy beh
 
 // Weather
 #define DAILY_WEATHER_INTERVAL 5 * 60 * 60 * 1000
@@ -54,15 +57,56 @@ extern bool OTAEnabled;
 #define LED_BRIGHTNESS_MAX 7
 
 // Inputs
-#define HALL_SWITCH GPIO_NUM_39
-//                              rest of inputs are in the buttonmanager was simpler this way I guess
+#define HALL_SWITCH GPIO_NUM_39 // Hall switch only used to turn off alarm currently
+
+// Button stuf
+#define MENU_PIN GPIO_NUM_25
+#define BACK_PIN GPIO_NUM_26
+#define DOWN_PIN GPIO_NUM_13
+#define UP_PIN GPIO_NUM_12
+
+#define SMALL_BUTTON_DELAY_MS 15
+
+#define BUTTON_TASK_DELAY 10 // In ms, lower means faster button detection but more cpu usage
+#define ADD_BUTTON_DELAY 1
+#define BUTTON_LONG_PRESS_MS 1000     // Duration until long press registers in miliseconds
+
+#define BUT_STATE HIGH
+#define BUT_CLICK_STATE LOW
+#define BUTTON_INTER_COND FALLING
+
+// Touch stuff I guess beh
+#define TOUCH_1_Seg_PIN GPIO_NUM_33
+#define TOUCH_1_Seg_THRESHOLD 23
+#define TOUCH_2_Seg_PIN GPIO_NUM_4
+#define TOUCH_2_Seg_THRESHOLD 25
+#define TOUCH_3_Seg_PIN GPIO_NUM_32
+#define TOUCH_3_Seg_THRESHOLD 25
+#define TOUCH_4_Seg_PIN GPIO_NUM_27
+#define TOUCH_4_Seg_THRESHOLD 27
+#define TOUCH_5_Seg_PIN GPIO_NUM_2
+#define TOUCH_5_Seg_THRESHOLD 33
+
+// On battery
+#define TOUCH_1_Seg_THRESHOLD_BAT 28
+#define TOUCH_2_Seg_THRESHOLD_BAT 30
+#define TOUCH_3_Seg_THRESHOLD_BAT 32
+#define TOUCH_4_Seg_THRESHOLD_BAT 35
+#define TOUCH_5_Seg_THRESHOLD_BAT 40
+
+// While Sleeping
+#define TOUCH_1_Seg_THRESHOLD_SLEEP 27
+#define TOUCH_2_Seg_THRESHOLD_SLEEP 28
+#define TOUCH_3_Seg_THRESHOLD_SLEEP 31
+#define TOUCH_4_Seg_THRESHOLD_SLEEP 33
+#define TOUCH_5_Seg_THRESHOLD_SLEEP 36
 
 // Menus
 #define LOOP_FUNCTION_TIMEOUT_MS 60000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
 #define MENU_TIMEOUT 20000 // How fast to go to main page without any input
 
 #define MAX_MENU_ITEMS 15 // Max menus change this too if you increase alarm number--  no doont think so ?
-#define MAX_ALARMS 20 // Max number of alarms
+#define MAX_ALARMS 30 // Max number of alarms
 
 #define MAIN_PAGE_DURATION 60000
 #define SCREENSAVER_DURATION 30000
@@ -96,12 +140,14 @@ extern bool OTAEnabled;
 #define INTERVAL_CHARTS 300000 // How often to read data for charts 
 #define BOOL_STR(b) ((b) ? String("True") : String("False")) // dont touch
 
-
 #include "hardware/pitches.h"
 
 #include "confidential.h"
 
 #include "hardware/hardware.h"
+#include "hardware/input/buttons/buttons.h"
+#include "hardware/input/buttons/combinations.h"
+#include "hardware/input/touch/touch.h"
 #include "functions.h"
 #include "WiFi/WiFi.h"
 #include "NTP/NTP.h"

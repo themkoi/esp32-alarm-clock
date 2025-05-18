@@ -7,9 +7,25 @@ timeval tv;
 
 void setup()
 {
+  Serial.begin(115200);
+  initHardware();
   Serial.println("Initializing Hardware");
 
-  initHardware();
+  if (!LittleFS.begin())
+  {
+    Serial.println("LittleFS mount failed, formatting...");
+    if (!LittleFS.format())
+    {
+      Serial.println("LittleFS format failed");
+    }
+    if (!LittleFS.begin())
+    {
+      Serial.println("LittleFS mount failed after format restarting");
+      ESP.restart();
+    }
+  }
+  Serial.println("LittleFS mounted successfully");
+
   WiFi.mode(WIFI_STA);
   initWifi();
   readOtaValue();
@@ -17,8 +33,8 @@ void setup()
   syncTimeLibWithRTC();
   LedDisplay.showNumberDecEx(hour() * 100 + minute(), 0b11100000, true);
 
-  int upButtonState = digitalRead(BUTTON_UP_PIN);
-  if (upButtonState == LOW || OTAEnabled == true)
+  int upinkButtonStates = digitalRead(UP_PIN);
+  if (upinkButtonStates == LOW || OTAEnabled == true)
   {
     setCpuFrequencyMhz(240); // stable 160,80,240
     Serial.println("button is pressed, enabling OTA");
@@ -27,7 +43,7 @@ void setup()
     display.clearDisplay();
     centerText("Connecting To WiFi", 30);
     centerText("Starting OTA", 40);
-    manager.oledDisplay();
+    display.display();
     while (WiFi.status() != WL_CONNECTED)
     {
       delay(100);
@@ -38,7 +54,7 @@ void setup()
     centerText("OTA:Enabled!", 10);
     centerText("IP Address:", 20);
     centerText(WiFi.localIP().toString(), 30);
-    manager.oledDisplay();
+    display.display();
     String ipAddress = WiFi.localIP().toString();
 
     String lastTwoDigits = ipAddress.substring(ipAddress.length() - 2);
@@ -56,15 +72,15 @@ void setup()
       centerText("IP Address:", 20);
       centerText(WiFi.localIP().toString(), 30);
       centerText("Running", 40);
-      manager.oledDisplay();
+      manager.sendOledAction(OLED_DISPLAY);
       ArduinoOTA.handle();
       display.clearDisplay();
       centerText("OTA:Enabled!", 10);
       centerText("IP Address:", 20);
       centerText(WiFi.localIP().toString(), 30);
-      manager.oledDisplay();
+      manager.sendOledAction(OLED_DISPLAY);
     }
-    manager.oledDisable();
+    manager.sendOledAction(OLED_DISABLE);
   }
   if (!OTAEnabled)
   {
@@ -82,7 +98,6 @@ void setup()
   initMenus();
   delay(100);
 }
-
 
 void loop()
 {

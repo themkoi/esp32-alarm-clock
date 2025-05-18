@@ -11,6 +11,7 @@ void initLightSensor();
 void initBuzzer();
 void initButtons();
 void initTempSensor();
+void initTouch();
 
 void initHardware()
 {
@@ -22,13 +23,12 @@ void initHardware()
   };
   esp_pm_configure(&pm_config);
   delay(2000);
-  Serial.begin(115200);
   pinMode(VOLTAGE_DIVIDER_PIN, INPUT);
   pinMode(POWER_STATE_PIN, INPUT);
   pinMode(CHARGER_CONTROL_PIN, OUTPUT);
   pinMode(HALL_SWITCH, INPUT);
-  touchSetCycles(0x2000, 0x2000);
   initButtons();
+  initTouch();
   initBuzzer();
   initOledDisplay();
   initLedDisplay();
@@ -49,19 +49,19 @@ void initOledDisplay()
   display.setTextSize(1);
   display.setCursor(0, 0);
   display.setTextColor(SSD1306_WHITE);
-  manager.oledDisplay();
+  manager.sendOledAction(OLED_DISPLAY);
 
   centerText("Oled Initialized", SCREEN_HEIGHT / 2);
   centerText((resetReasonToString(esp_reset_reason())), 10);
 
-  manager.oledDisplay();
-  manager.oledEnable();
+  manager.sendOledAction(OLED_DISPLAY);
+  manager.sendOledAction(OLED_ENABLE);
   display.ssd1306_command(0x81);
   display.ssd1306_command(130);
   delay(100);
   display.ssd1306_command(0xD9);
   display.ssd1306_command(30);
-  manager.oledFadeOut();
+  manager.sendOledAction(OLED_FADE_OUT);
   Serial.println("OLed display initialized");
 }
 
@@ -80,13 +80,18 @@ void initLightSensor()
   lightMeter.configureMeasurement(0x00, 0x02);
 }
 
+void initTouch() {
+  touchSetCycles(0x2000, 0x2000);
+  turnOnTouch();
+}
+ 
 void initButtons()
 {
-  pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
-  pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);
-  pinMode(BUTTON_CONFIRM_PIN, INPUT_PULLUP);
-  pinMode(BUTTON_EXIT_PIN, INPUT_PULLUP);
-  buttons.createTask();
+  pinMode(UP_PIN, INPUT_PULLUP);
+  pinMode(DOWN_PIN, INPUT_PULLUP);
+  pinMode(MENU_PIN, INPUT_PULLUP);
+  pinMode(BACK_PIN, INPUT_PULLUP);
+  turnOnButtons();
   Serial.println("Buttons initialized");
 }
 

@@ -39,25 +39,25 @@ bool previousInputState = false;
 long lastDebounceTime = 0;
 bool debouncedTouchState = false;
 
-bool lastFirstSegment = false;
-bool lastSecondSegment = false;
-bool lastThirdSegment = false;
-bool lastFourthSegment = false;
-bool lastFifthSegment = false;
+bool lastFirstSeg = false;
+bool lastSecondSeg = false;
+bool lastThirdSeg = false;
+bool lastFourthSeg = false;
+bool lastFifthSeg = false;
 
 void checkTouchButtons()
 {
-    if (lastFirstSegment || lastSecondSegment)
+    if (lastFirstSeg || lastSecondSeg)
     {
         Serial.println("changing page down");
         cyclePagesDown();
     }
-    else if (lastThirdSegment)
+    else if (lastThirdSeg)
     {
         PageNumberToShow = 1;
         Serial.println("setting first page");
     }
-    else if (lastFourthSegment || lastFifthSegment)
+    else if (lastFourthSeg || lastFifthSeg)
     {
         Serial.println("changing page up");
         cyclePagesUp();
@@ -68,19 +68,21 @@ void showMainPage()
 {
     const unsigned long debounceDelay = 50;
 
-    bool firstSegment = buttons.checkFirstSegment();
-    bool secondSegment = buttons.checkSecondSegment();
-    bool thirdSegment = buttons.checkThirdSegment();
-    bool fourthSegment = buttons.checkFourthSegment();
-    bool fifthSegment = buttons.checkFifthSegment();
+    touchStates tState = useTouch();
 
-    if ((firstSegment || secondSegment || thirdSegment || fourthSegment || fifthSegment) && isBeingHeld == false)
+    bool firstSeg = tState == First_Seg;
+    bool secondSeg = tState == Second_Seg;
+    bool thirdSeg = tState == Third_Seg;
+    bool fourthSeg = tState == Fourt_Seg;
+    bool fifthSeg = tState == Fifth_Seg;
+
+    if ((firstSeg || secondSeg || thirdSeg || fourthSeg || fifthSeg) && isBeingHeld == false)
     {
-        lastFirstSegment = firstSegment;
-        lastSecondSegment = secondSegment;
-        lastThirdSegment = thirdSegment;
-        lastFourthSegment = fourthSegment;
-        lastFifthSegment = fifthSegment;
+        lastFirstSeg = firstSeg;
+        lastSecondSeg = secondSeg;
+        lastThirdSeg = thirdSeg;
+        lastFourthSeg = fourthSeg;
+        lastFifthSeg = fifthSeg;
 
         turnOffScreensaver();
         cyclePagesUp();
@@ -101,34 +103,34 @@ void showMainPage()
         int touch4 = -1;
         int touch5 = -1;
 
-        if (lastFirstSegment)
-            touch1 = touchRead(TOUCH_1_SEGMENT_PIN);
-        if (lastSecondSegment)
-            touch2 = touchRead(TOUCH_2_SEGMENT_PIN);
-        if (lastThirdSegment)
-            touch3 = touchRead(TOUCH_3_SEGMENT_PIN);
-        if (lastFourthSegment)
-            touch4 = touchRead(TOUCH_4_SEGMENT_PIN);
-        if (lastFifthSegment)
-            touch5 = touchRead(TOUCH_5_SEGMENT_PIN);
+        if (lastFirstSeg)
+            touch1 = touchRead(TOUCH_1_Seg_PIN);
+        if (lastSecondSeg)
+            touch2 = touchRead(TOUCH_2_Seg_PIN);
+        if (lastThirdSeg)
+            touch3 = touchRead(TOUCH_3_Seg_PIN);
+        if (lastFourthSeg)
+            touch4 = touchRead(TOUCH_4_Seg_PIN);
+        if (lastFifthSeg)
+            touch5 = touchRead(TOUCH_5_Seg_PIN);
 
         bool touchCondition = false;
 
         if (checkPower() == true)
         {
-            touchCondition = ((touch1 != -1 && touch1 < TOUCH_1_SEGMENT_THRESHOLD) ||
-                              (touch2 != -1 && touch2 < TOUCH_2_SEGMENT_THRESHOLD) ||
-                              (touch3 != -1 && touch3 < TOUCH_3_SEGMENT_THRESHOLD) ||
-                              (touch4 != -1 && touch4 < TOUCH_4_SEGMENT_THRESHOLD) ||
-                              (touch5 != -1 && touch5 < TOUCH_5_SEGMENT_THRESHOLD));
+            touchCondition = ((touch1 != -1 && touch1 < TOUCH_1_Seg_THRESHOLD) ||
+                              (touch2 != -1 && touch2 < TOUCH_2_Seg_THRESHOLD) ||
+                              (touch3 != -1 && touch3 < TOUCH_3_Seg_THRESHOLD) ||
+                              (touch4 != -1 && touch4 < TOUCH_4_Seg_THRESHOLD) ||
+                              (touch5 != -1 && touch5 < TOUCH_5_Seg_THRESHOLD));
         }
         else
         {
-            touchCondition = ((touch1 != -1 && touch1 < TOUCH_1_SEGMENT_THRESHOLD_BAT) ||
-                              (touch2 != -1 && touch2 < TOUCH_2_SEGMENT_THRESHOLD_BAT) ||
-                              (touch3 != -1 && touch3 < TOUCH_3_SEGMENT_THRESHOLD_BAT) ||
-                              (touch4 != -1 && touch4 < TOUCH_4_SEGMENT_THRESHOLD_BAT) ||
-                              (touch5 != -1 && touch5 < TOUCH_5_SEGMENT_THRESHOLD_BAT));
+            touchCondition = ((touch1 != -1 && touch1 < TOUCH_1_Seg_THRESHOLD_BAT) ||
+                              (touch2 != -1 && touch2 < TOUCH_2_Seg_THRESHOLD_BAT) ||
+                              (touch3 != -1 && touch3 < TOUCH_3_Seg_THRESHOLD_BAT) ||
+                              (touch4 != -1 && touch4 < TOUCH_4_Seg_THRESHOLD_BAT) ||
+                              (touch5 != -1 && touch5 < TOUCH_5_Seg_THRESHOLD_BAT));
         }
 
         if (!touchCondition)
@@ -165,14 +167,14 @@ void showMainPage()
             previousMillisFirstMenu = millis() - intervalFirstMenu;
             displayedWeather = false;
             Serial.println("resetting menus");
-            manager.stopScrolling();
+            manager.sendOledAction(OLED_STOP_SCROLL);
             setupScreensaver();
         }
         else
         {
             if (PageNumberToShow == 1)
             {
-                manager.stopScrolling();
+                manager.sendOledAction(OLED_STOP_SCROLL);
                 LastPageShown = 1;
                 if (currentTime - previousMillisFirstMenu >= intervalFirstMenu)
                 {
@@ -185,7 +187,7 @@ void showMainPage()
                 displayedWeather = true;
                 LastPageShown = 2;
                 display.clearDisplay();
-                manager.oledDisplay();
+                manager.sendOledAction(OLED_DISPLAY);
                 currentWeather();
             }
             else if (PageNumberToShow == 3)
@@ -237,7 +239,7 @@ void turnOffScreensaver()
     displayedWeather = false;
     if (LastPageShown != 1)
     {
-        manager.stopScrolling();
+        manager.sendOledAction(OLED_STOP_SCROLL);
     }
 
     previousMillisFirstMenu = millis() - intervalFirstMenu;
@@ -255,7 +257,7 @@ void showFirstPage()
     centerText(getCurrentMonthName(), SCREEN_HEIGHT / 2 + 10);
     centerText("Light: " + String(getLightLevel()) + " lux", SCREEN_HEIGHT / 2 + 23);
     display.drawLine(26 - 8, 45, 102 + 8, 45, WHITE);
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
 }
 
 auto formatTemperature = [](float minTemp, float maxTemp)
@@ -295,7 +297,7 @@ void showForecastPage()
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     centerText(String(day()) + "." + String(month()) + "." + String(year()), 10);
     delay(10);
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
 }
 
 void displayWiFiSignal(int x, int y)
@@ -367,7 +369,7 @@ void showInfoPage()
     display.setCursor(5 + 35 + 50, 25);
     display.print(String(getBatteryVoltage()) + "V");
     delay(10);
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
 }
 
@@ -391,12 +393,12 @@ void showSensorPage()
     display.print("Hum: " + String(readHumidity()) + "%");
     display.drawBitmap(SCREEN_WIDTH - 24 - 10, 18 + 24, house_raindrops_24x24, 24, 24, BLACK, WHITE);
 
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
 }
 
 void cyclePages()
 {
-    manager.stopScrolling();
+    manager.sendOledAction(OLED_STOP_SCROLL);
     if (LastPageShown == 1)
     {
         PageNumberToShow = 2;
@@ -421,7 +423,7 @@ void cyclePages()
 
 void cyclePagesDown()
 {
-    manager.stopScrolling();
+    manager.sendOledAction(OLED_STOP_SCROLL);
     if (LastPageShown == 1)
     {
         PageNumberToShow = 2;
@@ -446,7 +448,7 @@ void cyclePagesDown()
 
 void cyclePagesUp()
 {
-    manager.stopScrolling();
+    manager.sendOledAction(OLED_STOP_SCROLL);
     if (LastPageShown == 1)
     {
         PageNumberToShow = 5;
@@ -504,7 +506,8 @@ void showScreensaver()
 
     for (i = 0; i < N_FLYERS; i++ && PageNumberToShow == false)
     {
-        if (buttons.checkTouch() == true)
+        delay(3);
+        if (inputDetected == true)
         {
             turnOffScreensaver();
             break;
@@ -540,5 +543,5 @@ void showScreensaver()
     {
         qsort(flyer, N_FLYERS, sizeof(struct Flyer), compare);
     }
-    manager.oledDisplay();
+    manager.sendOledAction(OLED_DISPLAY);
 }

@@ -54,7 +54,7 @@ void oledWakeupTask(void *pvParameters)
     unsigned long lastActionTime = 0;
     while (true)
     {
-        if (buttons.checkInput() || inputDetected)
+        if (useAllButtons() != None || useAllTouch() != No_Seg)
         {
             vTaskSuspend(dimmingTaskHandle);
             vTaskResume(LedTask);
@@ -65,10 +65,12 @@ void oledWakeupTask(void *pvParameters)
             maxBrightness = true;
             lastActionTime = millis();
 
+            manager.sendOledAction(OLED_ENABLE);
+
             if (manager.dimmed)
             {
-                manager.oledFadeIn();
-                manager.oledEnable();
+                delay(5);
+                manager.sendOledAction(OLED_FADE_IN);
             }
 
             vTaskDelay(pdMS_TO_TICKS(100));
@@ -77,23 +79,23 @@ void oledWakeupTask(void *pvParameters)
             {
                 vTaskDelay(pdMS_TO_TICKS(5));
 
-                if (buttons.checkInput() == true)
+                if (useAllButtons() != None)
                 {
                     lastActionTime = millis();
 
                     if (manager.dimmed)
                     {
-                        manager.oledFadeIn();
+                        manager.sendOledAction(OLED_FADE_IN);
                     }
 
                     if (!manager.ScreenEnabled)
                     {
-                        manager.oledEnable();
+                        manager.sendOledAction(OLED_ENABLE);
                     }
 
                     vTaskDelay(pdMS_TO_TICKS(5));
 
-                    if (buttons.checkInput() == true)
+                    if (useAllButtons() != None)
                     {
                         lastActionTime = millis();
                     }
@@ -197,22 +199,22 @@ void dimOledDisplay()
 
     if (shouldTurnOffDisplay(lightLevel) == true || (mmwaveState == 0 && WiFi.SSID() == SSID1 && mmwaveState != 3 && WiFi.isConnected() == true))
     {
-        manager.oledDisable();
+        manager.sendOledAction(OLED_DISABLE);
 
         if (manager.dimmed == false)
         {
-            manager.oledFadeOut();
+            manager.sendOledAction(OLED_FADE_OUT);
             delay(50);
         }
         delay(50);
     }
     else
     {
-        manager.oledEnable();
+        manager.sendOledAction(OLED_ENABLE);
 
         if (manager.dimmed == false)
         {
-            manager.oledFadeOut();
+            manager.sendOledAction(OLED_FADE_OUT);
         }
     }
 }

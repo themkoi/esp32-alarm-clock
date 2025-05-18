@@ -1,13 +1,13 @@
 #include "NTP.h"
-#include <Timezone.h>
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 TaskHandle_t NTPTask;
 
-// Define Timezone rules for Poland (Central European Time)
+// Timezonens
 TimeChangeRule myDST = {"CEST", Last, Sun, Mar, 2, 120}; // UTC+2
 TimeChangeRule mySTD = {"CET", Last, Sun, Oct, 3, 60};  // UTC+1
+
 Timezone myTZ(myDST, mySTD);
 TimeChangeRule *tcr;
 
