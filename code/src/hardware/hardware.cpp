@@ -11,6 +11,7 @@ void initLightSensor();
 void initBuzzer();
 void initButtons();
 void initTempSensor();
+void initTouch();
 
 void initHardware()
 {
@@ -26,8 +27,8 @@ void initHardware()
   pinMode(POWER_STATE_PIN, INPUT);
   pinMode(CHARGER_CONTROL_PIN, OUTPUT);
   pinMode(HALL_SWITCH, INPUT);
-  touchSetCycles(0x2000, 0x2000);
   initButtons();
+  initTouch();
   initBuzzer();
   initOledDisplay();
   initLedDisplay();
@@ -79,12 +80,17 @@ void initLightSensor()
   lightMeter.configureMeasurement(0x00, 0x02);
 }
 
+void initTouch() {
+  touchSetCycles(0x2000, 0x2000);
+  turnOnTouch();
+}
+ 
 void initButtons()
 {
-  pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
-  pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);
-  pinMode(BUTTON_CONFIRM_PIN, INPUT_PULLUP);
-  pinMode(BUTTON_EXIT_PIN, INPUT_PULLUP);
+  pinMode(UP_PIN, INPUT_PULLUP);
+  pinMode(DOWN_PIN, INPUT_PULLUP);
+  pinMode(MENU_PIN, INPUT_PULLUP);
+  pinMode(BACK_PIN, INPUT_PULLUP);
   turnOnButtons();
   Serial.println("Buttons initialized");
 }

@@ -24,9 +24,7 @@ extern TaskHandle_t buttonTask;
 inkButtonStates useButtonBack();
 inkButtonStates useButton();
 inkButtonStates useAllButtons();
-void useButtonBlank();
 void loopButtonsTask(void *parameter);
-void manageButtonWakeUp();
 
 void turnOnButtons();
 void initButtonTask();
@@ -37,8 +35,3 @@ void turnOnInterrupts();
 void resumeButtonTask();
 extern inkButtonStates interruptedButton;
 bool buttonRead(uint8_t pin); // Wrapper for digitalRead for buttons
-
-
-void dumpButtons();
-String getButtonString(inkButtonStates state);
-

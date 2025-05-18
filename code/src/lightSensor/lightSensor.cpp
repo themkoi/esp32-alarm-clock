@@ -54,7 +54,7 @@ void oledWakeupTask(void *pvParameters)
     unsigned long lastActionTime = 0;
     while (true)
     {
-        if (useAllButtons() != None)
+        if (useAllButtons() != None || useAllTouch() != No_Seg)
         {
             vTaskSuspend(dimmingTaskHandle);
             vTaskResume(LedTask);

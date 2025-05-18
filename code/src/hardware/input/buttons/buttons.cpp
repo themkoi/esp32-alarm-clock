@@ -40,7 +40,6 @@ inkButtonStates useButton()
     if (buttonPressedTmp != None)
     {
         inputDetected = true;
-        Serial.println("Used button by UI: " + getButtonString(buttonPressedTmp));
     }
     buttMut.unlock();
     return buttonPressedTmp;
@@ -61,7 +60,6 @@ inkButtonStates useAllButtons()
     if (buttonPressedTmp != None)
     {
         inputDetected = true;
-        Serial.println("Used button by UI: " + getButtonString(buttonPressedTmp));
     }
     buttMut.unlock();
     return buttonPressedTmp;
@@ -80,7 +78,6 @@ void useButtonBlank()
 void setButton(inkButtonStates button)
 {
     buttMut.lock();
-    Serial.println("setButton called: " + getButtonString(button));
     buttonPressed = button;
     buttMut.unlock();
     
@@ -138,7 +135,7 @@ void loopButtonsTask(void *parameter)
 {
     buttonsActivated = true;
     // Wait for all buttons to drop down, helpfull for manageButtonWakeUp
-    while (buttonRead(BACK_PIN) == BUT_CLICK_STATE || buttonRead(MENU_PIN) == BUT_CLICK_STATE || buttonRead(BUTTON_UP_PIN) == BUT_CLICK_STATE || buttonRead(BUTTON_DOWN_PIN) == BUT_CLICK_STATE)
+    while (buttonRead(BACK_PIN) == BUT_CLICK_STATE || buttonRead(MENU_PIN) == BUT_CLICK_STATE || buttonRead(UP_PIN) == BUT_CLICK_STATE || buttonRead(DOWN_PIN) == BUT_CLICK_STATE)
     {
         delay(SMALL_BUTTON_DELAY_MS);
     }
@@ -167,13 +164,13 @@ void loopButtonsTask(void *parameter)
         else if (interruptedButtonCopy == Up && buttonPressed != Menu && buttonPressed != Back && buttonPressed != LongBack && buttonPressed != LongMenu && buttonPressed != LongUp)
         {
             buttMut.unlock();
-            longButtonCheck(BUTTON_UP_PIN, Up, LongUp);
+            longButtonCheck(UP_PIN, Up, LongUp);
             buttMut.lock();
         }
         else if (interruptedButtonCopy == Down && buttonPressed != Up && buttonPressed != Menu && buttonPressed != Back && buttonPressed != LongUp && buttonPressed != LongBack && buttonPressed != LongDown && buttonPressed != LongMenu)
         {
             buttMut.unlock();
-            longButtonCheck(BUTTON_DOWN_PIN, Down, LongDown);
+            longButtonCheck(DOWN_PIN, Down, LongDown);
             buttMut.lock();
         }
         buttMut.unlock();
@@ -230,82 +227,6 @@ void deInitButtonTask()
     else
     {
         Serial.println("Not shutting down button task, it's state is: " + String(taskState));
-    }
-}
-
-void wakeUpLong(int pin, inkButtonStates normal, inkButtonStates hold)
-{
-    longButtonCheck(pin, normal, hold);
-    /*
-    long timeTime = millis();
-
-    while (buttonRead(pin) == BUT_CLICK_STATE && timeTime + BUTTON_LONG_PRESS_MS > millis())
-    {
-        delay(SMALL_BUTTON_DELAY_MS);
-    }
-    buttMut.lock();
-    if (timeTime + BUTTON_LONG_PRESS_MS < millis())
-    {
-        buttonPressed = hold;
-    }
-    else if (buttonRead(pin) == BUT_STATE)
-    {
-        buttonPressed = normal;
-    }
-    buttMut.unlock();
-    */
-}
-
-void manageButtonWakeUp()
-{
-}
-
-void dumpButtons()
-{
-    if (buttonRead(MENU_PIN) == BUT_CLICK_STATE)
-    {
-        Serial.println("Menu button pressed");
-    }
-    else if (buttonRead(BACK_PIN) == BUT_CLICK_STATE)
-    {
-        Serial.println("Back button pressed");
-    }
-    else if (buttonRead(BUTTON_UP_PIN) == BUT_CLICK_STATE)
-    {
-        Serial.println("Up button pressed");
-    }
-    else if (buttonRead(BUTTON_DOWN_PIN) == BUT_CLICK_STATE)
-    {
-        Serial.println("Down button pressed");
-    }
-}
-
-String getButtonString(inkButtonStates state)
-{
-    switch (state)
-    {
-    case Unknown:
-        return "Unknown";
-    case None:
-        return "None";
-    case Back:
-        return "Back";
-    case Menu:
-        return "Menu";
-    case Up:
-        return "Up";
-    case Down:
-        return "Down";
-    case LongBack:
-        return "LongBack";
-    case LongMenu:
-        return "LongMenu";
-    case LongUp:
-        return "LongUp";
-    case LongDown:
-        return "LongDown";
-    default:
-        return "Error";
     }
 }
 

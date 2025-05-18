@@ -25,13 +25,13 @@ void loopCombinations()
     {
         combinationsChecks[MENU_INDEX] = MENU_PIN;
     }
-    if (buttonRead(BUTTON_UP_PIN) == BUT_CLICK_STATE)
+    if (buttonRead(UP_PIN) == BUT_CLICK_STATE)
     {
-        combinationsChecks[UP_INDEX] = BUTTON_UP_PIN;
+        combinationsChecks[UP_INDEX] = UP_PIN;
     }
-    if (buttonRead(BUTTON_DOWN_PIN) == BUT_CLICK_STATE)
+    if (buttonRead(DOWN_PIN) == BUT_CLICK_STATE)
     {
-        combinationsChecks[DOWN_INDEX] = BUTTON_DOWN_PIN;
+        combinationsChecks[DOWN_INDEX] = DOWN_PIN;
     }
 }
 
@@ -49,7 +49,7 @@ bool wasClicked(uint8_t pin)
 
 void executeCombination()
 {
-    if (wasClicked(BACK_PIN) == true && wasClicked(BUTTON_UP_PIN) == true && wasClicked(MENU_PIN) == false && wasClicked(BUTTON_DOWN_PIN) == false)
+    if (wasClicked(BACK_PIN) == true && wasClicked(UP_PIN) == true && wasClicked(MENU_PIN) == false && wasClicked(DOWN_PIN) == false)
     {   
         return;
     }

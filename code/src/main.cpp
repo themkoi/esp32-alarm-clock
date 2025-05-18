@@ -20,7 +20,8 @@ void setup()
     }
     if (!LittleFS.begin())
     {
-      Serial.println("LittleFS mount failed after format");
+      Serial.println("LittleFS mount failed after format restarting");
+      ESP.restart();
     }
   }
   Serial.println("LittleFS mounted successfully");
@@ -32,7 +33,7 @@ void setup()
   syncTimeLibWithRTC();
   LedDisplay.showNumberDecEx(hour() * 100 + minute(), 0b11100000, true);
 
-  int upinkButtonStates = digitalRead(BUTTON_UP_PIN);
+  int upinkButtonStates = digitalRead(UP_PIN);
   if (upinkButtonStates == LOW || OTAEnabled == true)
   {
     setCpuFrequencyMhz(240); // stable 160,80,240
