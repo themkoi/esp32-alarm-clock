@@ -624,6 +624,10 @@ void manageAlarms()
     uint8_t alarmIndex = alarmsSubmenu->entries[data.currentButton].text.toInt();
     static bool isEditing = false;
     static bool inDaySelectionMode = false;
+    static unsigned long lastRepeatTime = 0;
+    const unsigned long repeatInterval = 150;
+    inkButtonStates btn = useButton();
+    int labelWidth = 0;
 
     auto drawMenuOption = [&](const String &label, int16_t x, int16_t y, bool selected, bool editing)
     {
@@ -656,46 +660,6 @@ void manageAlarms()
             display.drawBitmap(x, y, remove_18x18, 18, 18, BLACK, WHITE);
     };
 
-    auto updateAlarmValue = [&]()
-    {
-        inkButtonStates btn = useButton();
-    
-        auto incHour = [&]() { alarms[alarmIndex].hours = (alarms[alarmIndex].hours + 1) % 24; };
-        auto decHour = [&]() { alarms[alarmIndex].hours = (alarms[alarmIndex].hours + 23) % 24; };
-        auto incMinute = [&]() { alarms[alarmIndex].minutes = (alarms[alarmIndex].minutes + 1) % 60; };
-        auto decMinute = [&]() { alarms[alarmIndex].minutes = (alarms[alarmIndex].minutes + 59) % 60; };
-    
-        auto handle = [&](bool up) {
-            AlarmMenuUpdate = true;
-            if (currentState == 0) (up ? incHour() : decHour());
-            else if (currentState == 1) (up ? incMinute() : decMinute());
-        };
-    
-        if (btn == Up || btn == Down)
-        {
-            handle(btn == Up);
-        }
-        else if (btn == LongUp || btn == LongDown)
-        {
-            handle(btn == LongUp);
-            unsigned long lastRepeat = millis();
-            const unsigned long repeatDelay = 150;
-    
-            while (buttonRead(btn == LongUp ? UP_PIN : DOWN_PIN))
-            {
-                if (millis() - lastRepeat >= repeatDelay)
-                {
-                    lastRepeat = millis();
-                    handle(btn == LongUp);
-                }
-            }
-        }
-    };
-    
-    
-
-    int labelWidth = 0;
-
     auto drawDaySelection = [&](int16_t x, int16_t y, bool selected, int dayIndex, bool groupSelected, bool buttonSelected)
     {
         String dayLabel = getShorterWeekdayName(dayIndex + 1);
@@ -722,7 +686,7 @@ void manageAlarms()
 
     auto drawDaySelectionGroup = [&](int16_t x, int16_t y)
     {
-        int startX = 2;
+        int startX = x;
         labelWidth = 0;
         for (int i = 0; i < 7; i++)
         {
@@ -731,9 +695,8 @@ void manageAlarms()
         }
     };
 
-    if (AlarmMenuUpdate)
+    auto redrawDisplay = [&]()
     {
-        AlarmMenuUpdate = false;
         display.clearDisplay();
         display.setTextColor(WHITE, BLACK);
         display.setCursor(1, 10);
@@ -746,8 +709,11 @@ void manageAlarms()
         centerText(":", 25, 34);
         drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].hours), 17, 25, !inDaySelectionMode && currentState == 0, isEditing && currentState == 0);
         drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].minutes), 39, 25, !inDaySelectionMode && currentState == 1, isEditing && currentState == 1);
+
         display.setFont(&DejaVu_LGC_Sans_Bold_9);
-        inDaySelectionMode ? drawDaySelectionGroup(2, 53) : [&]()
+        if (inDaySelectionMode)
+            drawDaySelectionGroup(2, 53);
+        else
         {
             int startX = 2;
             labelWidth = 0;
@@ -758,62 +724,88 @@ void manageAlarms()
             }
             if (currentState == 3)
                 display.drawRect(0, 45, 125, 14, WHITE);
-        }();
+        }
 
         display.setTextColor(WHITE, BLACK);
         display.setFont(&DejaVu_LGC_Sans_Bold_10);
         drawMenuOption("Enabled: " + String(alarms[alarmIndex].enabled ? "Yes" : "No"), 1, 37, !inDaySelectionMode && currentState == 2, isEditing && currentState == 2);
         drawMenuOption("Sound: " + String(alarms[alarmIndex].soundOn ? "On" : "Off"), 1, 63, !inDaySelectionMode && currentState == 4, isEditing && currentState == 4);
         drawBitmapOption(SCREEN_WIDTH - 30, 20, !inDaySelectionMode && currentState == 5, !inDaySelectionMode && isEditing && currentState == 5);
-        manager.sendOledAction(OLED_DISPLAY);
-    }
 
-    switch (useButton())
+        display.display();
+    };
+
+    auto updateAlarmValueUp = [&]()
+    {
+        if (currentState == 0)
+            alarms[alarmIndex].hours = (alarms[alarmIndex].hours + 1) % 24;
+        else if (currentState == 1)
+            alarms[alarmIndex].minutes = (alarms[alarmIndex].minutes + 1) % 60;
+        AlarmMenuUpdate = true;
+    };
+
+    auto updateAlarmValueDown = [&]()
+    {
+        if (currentState == 0)
+            alarms[alarmIndex].hours = (alarms[alarmIndex].hours + 23) % 24;
+        else if (currentState == 1)
+            alarms[alarmIndex].minutes = (alarms[alarmIndex].minutes + 59) % 60;
+        AlarmMenuUpdate = true;
+    };
+
+    unsigned long now = millis();
+
+    switch (btn)
     {
     case Up:
         if (inDaySelectionMode)
-        {
             currentState = (currentState + 1) % 7;
-        }
         else if (!isEditing)
-        {
             currentState = (currentState + 5) % 6;
-        }
+        else
+            updateAlarmValueUp();
         AlarmMenuUpdate = true;
+        lastRepeatTime = now;
         break;
 
     case Down:
         if (inDaySelectionMode)
-        {
             currentState = (currentState + 6) % 7;
-        }
         else if (!isEditing)
-        {
             currentState = (currentState + 1) % 6;
-        }
+        else
+            updateAlarmValueDown();
         AlarmMenuUpdate = true;
+        lastRepeatTime = now;
         break;
 
     case Menu:
         if (inDaySelectionMode)
-        {
             alarms[alarmIndex].days[currentState] = !alarms[alarmIndex].days[currentState];
-        }
         else if (!isEditing)
         {
             switch (currentState)
             {
-            case 2: alarms[alarmIndex].enabled = !alarms[alarmIndex].enabled; break;
-            case 3: inDaySelectionMode = true; currentState = 0; break;
-            case 4: alarms[alarmIndex].soundOn = !alarms[alarmIndex].soundOn; break;
-            case 5: deleteAlarmStatic(alarmIndex); break;
-            default: isEditing = true; break;
+            case 2:
+                alarms[alarmIndex].enabled = !alarms[alarmIndex].enabled;
+                break;
+            case 3:
+                inDaySelectionMode = true;
+                currentState = 0;
+                break;
+            case 4:
+                alarms[alarmIndex].soundOn = !alarms[alarmIndex].soundOn;
+                break;
+            case 5:
+                deleteAlarmStatic(alarmIndex);
+                break;
+            default:
+                isEditing = true;
+                break;
             }
         }
         else
-        {
             isEditing = false;
-        }
         AlarmMenuUpdate = true;
         break;
 
@@ -824,9 +816,7 @@ void manageAlarms()
             currentState = 0;
         }
         else if (isEditing)
-        {
             isEditing = false;
-        }
         else
         {
             exitLoopFunction = true;
@@ -836,9 +826,27 @@ void manageAlarms()
         break;
 
     default:
-        if (isEditing)
-            updateAlarmValue();
         break;
+    }
+
+    if (isEditing)
+    {
+        if (digitalRead(UP_PIN) == LOW && (now - lastRepeatTime > 150))
+        {
+            updateAlarmValueUp();
+            lastRepeatTime = now;
+        }
+        if (digitalRead(DOWN_PIN) == LOW && (now - lastRepeatTime > 150))
+        {
+            updateAlarmValueDown();
+            lastRepeatTime = now;
+        }
+    }
+
+    if (AlarmMenuUpdate)
+    {
+        AlarmMenuUpdate = false;
+        redrawDisplay();
     }
 
     if (shouldExitLoop())
@@ -848,7 +856,6 @@ void manageAlarms()
         editCurrentMenuEntry(getAlarmEntryName(alarmIndex));
     }
 }
-
 
 void deleteAlarmStatic(int index)
 {
