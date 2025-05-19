@@ -38,7 +38,7 @@ void createDimmingTask()
         "InputOledTask",      /* String with name of task. */
         2048,          /* Stack size in words. */
         NULL,           /* Parameter passed as input of the task */
-        2,              /* Priority of the task. */
+        3,              /* Priority of the task. */
         &oledWakeupTaskHandle,           /* Task handle. */
         1               /* Core where the task should run. */
     );
@@ -194,8 +194,6 @@ void dimOledDisplay()
 {
     int currentHour = hour();
     int currentMinute = minute();
-    Serial.println("raw light level: " + String(lightLevel));
-    Serial.println("smoothened light level: " + String(lightLevel));
 
     if (shouldTurnOffDisplay(lightLevel) == true || (mmwaveState == 0 && WiFi.SSID() == SSID1 && mmwaveState != 3 && WiFi.isConnected() == true))
     {
@@ -249,17 +247,27 @@ int mapWithHysteresis(int lightLevel)
     return ledLastBrightness;
 }
 
+bool disableHysteresisState = false;
+
 void dimLedDisplay()
 {
     int currentHour = hour();
     int currentMinute = minute();
-    Serial.println("raw light level: " + String(getLightLevel()));
-    Serial.println("smoothened light level: " + String(lightLevel));
 
     if (lightLevel < 5000)
     {
+        if (disableHysteresisState)
+        {
+            if (lightLevel > LED_DISABLE_THRESHOLD + 3) // hysteresis upper limit
+                disableHysteresisState = false;
+        }
+        else
+        {
+            if (lightLevel <= LED_DISABLE_THRESHOLD - 3 && checkForNight())
+                disableHysteresisState = true;
+        }
 
-        if (lightLevel <= LED_DISABLE_THRESHOLD && (checkForNight() == true))
+        if (disableHysteresisState)
         {
             LedDisplay.clear();
             displayON = false;
@@ -279,6 +287,7 @@ void dimLedDisplay()
     }
 }
 
+
 float getLightLevel()
 {
     float currentLightLevel = lightMeter.readBrightnessInLux(); // Read the current light level from BH1750 sensor
@@ -287,28 +296,33 @@ float getLightLevel()
 
 bool checkForNight()
 {
-    time_t currentTime = now();
-    int weekdayIndex = weekday(currentTime) - 1;
-
-    int currentHour = hour();
-
-    if ((alarms[weekdayIndex].hours == 0 && alarms[weekdayIndex].minutes == 0) && alarms[weekdayIndex].enabled == false)
+    if (isWeatherAvailable == false)
     {
-        if (currentHour >= 23 || currentHour < 10)
+        time_t currentTime = now();
+        int weekdayIndex = weekday(currentTime) - 1;
+    
+        int currentHour = hour();
+    
+        if ((alarms[weekdayIndex].hours == 0 && alarms[weekdayIndex].minutes == 0) && alarms[weekdayIndex].enabled == false)
         {
-            return true;
+            if (currentHour >= 23 || currentHour < 10)
+            {
+                return true;
+            }
+            else
+                return false;
         }
         else
-            return false;
-    }
-    else
-    {
-        if (currentHour >= 23 || currentHour < alarms[weekdayIndex].hours)
         {
-            return true;
+            if (currentHour >= 23 || currentHour < alarms[weekdayIndex].hours)
+            {
+                return true;
+            }
+            else
+                return false;
         }
-        else
-            return false;
+    } else {
+        return !currentWeatherData.isDay;
     }
 }
 
