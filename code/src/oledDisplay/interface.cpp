@@ -712,18 +712,18 @@ void manageAlarms()
 
         display.setFont(&DejaVu_LGC_Sans_Bold_9);
         if (inDaySelectionMode)
-            drawDaySelectionGroup(2, 53);
+            drawDaySelectionGroup(2, 50);
         else
         {
             int startX = 2;
             labelWidth = 0;
             for (int i = 0; i < 7; i++)
             {
-                drawDaySelection(startX, 53, alarms[alarmIndex].days[i], i, false, false);
+                drawDaySelection(startX, 50, alarms[alarmIndex].days[i], i, false, false);
                 startX += labelWidth + 5;
             }
             if (currentState == 3)
-                display.drawRect(0, 45, 125, 14, WHITE);
+                display.drawRect(0, 41-3, 125, 16, WHITE);
         }
 
         display.setTextColor(WHITE, BLACK);
@@ -778,7 +778,42 @@ void manageAlarms()
         AlarmMenuUpdate = true;
         lastRepeatTime = now;
         break;
-
+    case LongDown:
+        if (isEditing)
+        {
+            while (digitalRead(DOWN_PIN) == LOW)
+            {
+                if ((millis() - lastRepeatTime > 200))
+                {
+                    updateAlarmValueDown();
+                    if (AlarmMenuUpdate)
+                    {
+                        AlarmMenuUpdate = false;
+                        redrawDisplay();
+                    }
+                    lastRepeatTime = millis();
+                }
+            }
+        }
+        break;
+    case LongUp:
+        if (isEditing)
+        {
+            while (digitalRead(UP_PIN) == LOW)
+            {
+                if ((millis() - lastRepeatTime > 200))
+                {
+                    updateAlarmValueUp();
+                    if (AlarmMenuUpdate)
+                    {
+                        AlarmMenuUpdate = false;
+                        redrawDisplay();
+                    }
+                    lastRepeatTime = millis();
+                }
+            }
+        }
+        break;
     case Menu:
         if (inDaySelectionMode)
             alarms[alarmIndex].days[currentState] = !alarms[alarmIndex].days[currentState];
@@ -827,20 +862,6 @@ void manageAlarms()
 
     default:
         break;
-    }
-
-    if (isEditing)
-    {
-        if (digitalRead(UP_PIN) == LOW && (now - lastRepeatTime > 150))
-        {
-            updateAlarmValueUp();
-            lastRepeatTime = now;
-        }
-        if (digitalRead(DOWN_PIN) == LOW && (now - lastRepeatTime > 150))
-        {
-            updateAlarmValueDown();
-            lastRepeatTime = now;
-        }
     }
 
     if (AlarmMenuUpdate)
