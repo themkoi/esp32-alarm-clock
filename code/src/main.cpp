@@ -21,7 +21,6 @@ void setup()
     if (!LittleFS.begin())
     {
       Serial.println("LittleFS mount failed after format restarting");
-      ESP.restart();
     }
   }
   Serial.println("LittleFS mounted successfully");

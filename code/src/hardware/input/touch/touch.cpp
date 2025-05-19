@@ -32,6 +32,31 @@ touchStates useAllTouch()
     return touchPressedTmp;
 }
 
+typedef struct {
+    gpio_num_t pin;
+    uint8_t threshold;
+} TouchConfig;
+
+TouchConfig getTouchConfig(touchStates state) {
+    bool onBattery = !checkPower();
+
+    switch (state) {
+        case First_Seg:
+            return (TouchConfig){ TOUCH_1_Seg_PIN, onBattery ? TOUCH_1_Seg_THRESHOLD_BAT : TOUCH_1_Seg_THRESHOLD };
+        case Second_Seg:
+            return (TouchConfig){ TOUCH_2_Seg_PIN, onBattery ? TOUCH_2_Seg_THRESHOLD_BAT : TOUCH_2_Seg_THRESHOLD };
+        case Third_Seg:
+            return (TouchConfig){ TOUCH_3_Seg_PIN, onBattery ? TOUCH_3_Seg_THRESHOLD_BAT : TOUCH_3_Seg_THRESHOLD };
+        case Fourt_Seg:
+            return (TouchConfig){ TOUCH_4_Seg_PIN, onBattery ? TOUCH_4_Seg_THRESHOLD_BAT : TOUCH_4_Seg_THRESHOLD };
+        case Fifth_Seg:
+            return (TouchConfig){ TOUCH_5_Seg_PIN, onBattery ? TOUCH_5_Seg_THRESHOLD_BAT : TOUCH_5_Seg_THRESHOLD };
+        default:
+            return (TouchConfig){ GPIO_NUM_NC, 0 };
+    }
+}
+
+
 void setTouch(touchStates touch)
 {
     touchMut.lock();
@@ -39,6 +64,12 @@ void setTouch(touchStates touch)
     touchMut.unlock();
 
     Serial.println("setTouch done");
+    tone(BUZZER_PIN, NOTE_C7, 1000 / 16);
+    TouchConfig currentTouch = getTouchConfig(touch);
+    while (touchRead(currentTouch.pin) < currentTouch.threshold)
+    {
+        delay(SMALL_BUTTON_DELAY_MS);
+    }
 }
 
 void loopTouchTask(void *parameter)

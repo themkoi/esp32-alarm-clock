@@ -99,6 +99,7 @@ void showMainPage()
 
             turnOffScreensaver();
             cyclePagesUp();
+            lastCycle = millis();
 
             Serial.println("Held");
         }

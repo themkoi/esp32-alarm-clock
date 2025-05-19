@@ -121,8 +121,6 @@ void initTempSensor()
   if (!sht4.begin())
   {
     Serial.println("Couldn't find SHT4x");
-    while (1)
-      delay(1);
   }
   Serial.println("Found SHT4x sensor");
   Serial.print("Serial number 0x");
