@@ -83,20 +83,18 @@ void enableAllAlarms()
   }
 }
 
-int lastRingingMinute = -1; // Initialized to an invalid minute
-int lastRingingHour = -1;   // Initialized to an invalid hour
+int lastRingingMinute = -1; 
+int lastRingingHour = -1;   
 bool ringing = false;
 
 bool buzzerEnabled = false;
 
 void checkAlarm(int index)
 {
-  // Get the current time
   int currentHours = hour();
   int currentMinutes = minute();
   Serial.println("Check Alarm Function");
 
-  // Check if it's time for the alarm
   if (currentHours == alarms[index].hours && currentMinutes == alarms[index].minutes && (ringing == false || lastRingingMinute != currentMinutes || lastRingingHour != currentHours))
   {
     Serial.print("Alarm! It's time to wake up on ");
@@ -124,7 +122,7 @@ void createRiningingTask()
   );
 }
 
-static unsigned long alarmStartTime = 0;  // Variable to store the start time
+static unsigned long alarmStartTime = 0;
 
 void touchStopAlarm(int hour, bool ringOn)
 {
@@ -184,10 +182,9 @@ void ringAlarm(void *parameter)
       vTaskDelay(100);
     }
 
-    // After 15 minutes, send toggle requests every 5 seconds
-    if (millis() - startTime >= 900000) // 15 minutes = 900000 ms
+    if (millis() - startTime >= 900000)
     {
-      if (millis() - lastToggleRequestTime >= 10000) // 5 seconds interval
+      if (millis() - lastToggleRequestTime >= 10000)
       {
         sendTogglePostRequest();
         lastToggleRequestTime = millis();

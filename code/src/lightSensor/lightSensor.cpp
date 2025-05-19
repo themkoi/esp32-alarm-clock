@@ -72,6 +72,7 @@ void oledWakeupTask(void *pvParameters)
                 delay(5);
                 manager.sendOledAction(OLED_FADE_IN);
             }
+            inputDetected = false;
 
             vTaskDelay(pdMS_TO_TICKS(100));
 
@@ -79,14 +80,11 @@ void oledWakeupTask(void *pvParameters)
             {
                 vTaskDelay(pdMS_TO_TICKS(5));
 
-                if (useAllButtons() != None)
+                if (useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true)
                 {
+                    inputDetected = false;
                     lastActionTime = millis();
 
-                    if (manager.dimmed)
-                    {
-                        manager.sendOledAction(OLED_FADE_IN);
-                    }
 
                     if (!manager.ScreenEnabled)
                     {
@@ -95,8 +93,9 @@ void oledWakeupTask(void *pvParameters)
 
                     vTaskDelay(pdMS_TO_TICKS(5));
 
-                    if (useAllButtons() != None)
+                    if (useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true)
                     {
+                        inputDetected = false;
                         lastActionTime = millis();
                     }
                 }
@@ -104,7 +103,6 @@ void oledWakeupTask(void *pvParameters)
 
             dimOledDisplay();
             lightLevel = getLightLevel();
-            inputDetected = false;
         }
         else
         {
