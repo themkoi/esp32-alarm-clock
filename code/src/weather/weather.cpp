@@ -15,7 +15,7 @@ void createWeatherTask()
     xTaskCreatePinnedToCore(
         weatherTask,       // Function to implement the task
         "Syncing Weather", // Name of the task
-        2048,             // Stack size (words)
+        4096,             // Stack size (words)
         NULL,              // Parameter to pass
         1,                 // Priority
         &WeatherTask,      // Task handle

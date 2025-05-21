@@ -68,7 +68,7 @@ static unsigned long lastHeldCheck = 0;
 const unsigned long debounceDelay = 5; // minimal debounce
 const unsigned long heldCheckInterval = 10;
 unsigned long lastCycle = 0;
-const unsigned long cycleInterneval = 500;
+const unsigned long cycleInterneval = 1000;
 
 void showMainPage()
 {
