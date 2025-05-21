@@ -47,6 +47,7 @@ bool lastFifthSeg = false;
 
 void checkTouchButtons()
 {
+    tone(BUZZER_PIN, NOTE_C7, 1000 / 16);
     if (lastFirstSeg || lastSecondSeg)
     {
         Serial.println("changing page down");
