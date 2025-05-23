@@ -76,10 +76,7 @@ void enableAllAlarms()
 {
   for (int i = 0; i < MAX_ALARMS; i++)
   {
-    if (alarms[i].hours != 0 && alarms[i].minutes != 0)
-    {
       alarms[i].enabled = true;
-    }
   }
 }
 

@@ -257,6 +257,7 @@ void CPUDebugMenu()
     display.setCursor(0, 34);
     display.println("XTAL freq: " + String(getXtalFrequencyMhz()) + " Mhz");
     centerText("Chip model:", 44);
+    centerText(String(ESP.getChipModel()), 54);
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     manager.sendOledAction(OLED_DISPLAY);
     delay(10);

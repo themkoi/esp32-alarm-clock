@@ -723,7 +723,7 @@ void manageAlarms()
                 startX += labelWidth + 5;
             }
             if (currentState == 3)
-                display.drawRect(0, 41-3, 125, 16, WHITE);
+                display.drawRect(0, 41 - 3, 125, 16, WHITE);
         }
 
         display.setTextColor(WHITE, BLACK);
@@ -971,6 +971,45 @@ void menuTask(void *parameter)
     }
 }
 
+void refreshAlarmsSubmenu() {
+    // 1. Lock critical section (prevent interrupts during update)
+    
+    // 2. Clear existing entries but keep the submenu structure
+    if (alarmsSubmenu) {
+        // Wipe existing entries but don't delete the array
+        memset(alarmsSubmenu->entries, 0, sizeof(entryMenu) * alarmsSubmenu->maxMenus);
+        alarmsSubmenu->count = 0;
+        
+        // 3. Rebuild contents in-place
+        addEntryToSubmenu(alarmsSubmenu, "Add New Alarm", addNewAlarm, nullptr, &DejaVu_LGC_Sans_Bold_10);
+        
+        for (int i = 0; i < MAX_ALARMS; ++i) {
+            if (alarms[i].exists) {
+                addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &font4pt7b);
+            }
+        }
+        
+        // 4. Update active references if currently viewing
+        if (data.isSubmenu && data.currentSubmenu == alarmsSubmenu->entries) {
+            data.submenuCount = alarmsSubmenu->count;
+            showMenu(); // Only refresh if we're in this menu
+        }
+    }
+    
+}
+
+void disableAlarmsIn()
+{
+    disableAllAlarms();
+    refreshAlarmsSubmenu();
+}
+
+void enableAlarmsIn()
+{
+    enableAllAlarms();
+    refreshAlarmsSubmenu();
+}
+
 void initMenus()
 {
     entryMenu *WeatherItems = new entryMenu[4]{
@@ -1009,10 +1048,13 @@ void initMenus()
     Submenu *debugSubmenu = new Submenu{"Debug", debugItems, 6, 6};
     entryMenu debugButton = {"Debug", nullptr, nullptr, debugSubmenu, &DejaVu_LGC_Sans_Bold_10};
 
-    entryMenu *manageAlarmsItems = new entryMenu[1]{
+    entryMenu *manageAlarmsItems = new entryMenu[4]{
         {"Save Alarms", saveAlarms, nullptr, nullptr, nullptr},
+        {"Disable All Alarms", disableAlarmsIn, nullptr, nullptr, nullptr},
+        {"Enable All Alarms", enableAlarmsIn, nullptr, nullptr, nullptr},
+        {"Refresh Alarms", refreshAlarmsSubmenu, nullptr, nullptr, nullptr}, // should not be needed but just in case
     };
-    Submenu *manageAlarmsSubmenu = new Submenu{"Alarm Ctrl", manageAlarmsItems, 1, 1};
+    Submenu *manageAlarmsSubmenu = new Submenu{"Alarm Ctrl", manageAlarmsItems, 4, 4};
 
     // Initialize alarm menu
     alarmsSubmenu = createAlarmsMenu();
@@ -1020,8 +1062,8 @@ void initMenus()
         {"Alarms", nullptr, nullptr, alarmsSubmenu, nullptr},
         {"Alarm Ctrl", nullptr, nullptr, manageAlarmsSubmenu, nullptr},
     };
-    Submenu *alarmsSubmenu = new Submenu{"Alarms", alarmsItems, 2, 2};
-    entryMenu alarmsButton = {"Alarms", nullptr, nullptr, alarmsSubmenu, &DejaVu_LGC_Sans_Bold_10};
+    Submenu *alarmsMain = new Submenu{"Alarms", alarmsItems, 2, 2};
+    entryMenu alarmsButton = {"Alarms", nullptr, nullptr, alarmsMain, &DejaVu_LGC_Sans_Bold_10};
 
     // Initialize the main menu
     initMenu(new entryMenu[4]{
