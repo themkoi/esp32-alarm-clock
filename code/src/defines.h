@@ -89,15 +89,15 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 
 // Touch stuff I guess beh
 #define TOUCH_1_Seg_PIN GPIO_NUM_33
-#define TOUCH_1_Seg_THRESHOLD 23
+#define TOUCH_1_Seg_THRESHOLD 4
 #define TOUCH_2_Seg_PIN GPIO_NUM_4
-#define TOUCH_2_Seg_THRESHOLD 25
+#define TOUCH_2_Seg_THRESHOLD 4
 #define TOUCH_3_Seg_PIN GPIO_NUM_32
-#define TOUCH_3_Seg_THRESHOLD 25
+#define TOUCH_3_Seg_THRESHOLD 5
 #define TOUCH_4_Seg_PIN GPIO_NUM_27
-#define TOUCH_4_Seg_THRESHOLD 27
+#define TOUCH_4_Seg_THRESHOLD 5
 #define TOUCH_5_Seg_PIN GPIO_NUM_2
-#define TOUCH_5_Seg_THRESHOLD 33
+#define TOUCH_5_Seg_THRESHOLD 5
 
 // On battery
 #define TOUCH_1_Seg_THRESHOLD_BAT 28

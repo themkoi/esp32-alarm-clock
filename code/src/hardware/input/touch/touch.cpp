@@ -4,7 +4,6 @@ bool touchActivated = false;
 touchStates touchPressed = No_Seg;
 TaskHandle_t touchTask = NULL;
 std::mutex touchMut;
-QueueHandle_t touchQueue = NULL;
 
 touchStates useTouch()
 {
@@ -13,8 +12,9 @@ touchStates useTouch()
     touchPressed = No_Seg;
 
     if (touchPressedTmp != No_Seg)
+    {
         inputDetected = true;
-
+    }
     touchMut.unlock();
     return touchPressedTmp;
 }
@@ -25,8 +25,9 @@ touchStates useAllTouch()
     touchStates touchPressedTmp = touchPressed;
 
     if (touchPressedTmp != No_Seg)
+    {
         inputDetected = true;
-
+    }
     touchMut.unlock();
     return touchPressedTmp;
 }
@@ -41,17 +42,17 @@ TouchConfig getTouchConfig(touchStates state) {
 
     switch (state) {
         case First_Seg:
-            return { TOUCH_1_Seg_PIN, (uint8_t)(onBattery ? TOUCH_1_Seg_THRESHOLD_BAT : TOUCH_1_Seg_THRESHOLD) };
+            return (TouchConfig){ TOUCH_1_Seg_PIN, onBattery ? TOUCH_1_Seg_THRESHOLD_BAT : TOUCH_1_Seg_THRESHOLD };
         case Second_Seg:
-            return { TOUCH_2_Seg_PIN, (uint8_t)(onBattery ? TOUCH_2_Seg_THRESHOLD_BAT : TOUCH_2_Seg_THRESHOLD) };
+            return (TouchConfig){ TOUCH_2_Seg_PIN, onBattery ? TOUCH_2_Seg_THRESHOLD_BAT : TOUCH_2_Seg_THRESHOLD };
         case Third_Seg:
-            return { TOUCH_3_Seg_PIN, (uint8_t)(onBattery ? TOUCH_3_Seg_THRESHOLD_BAT : TOUCH_3_Seg_THRESHOLD) };
+            return (TouchConfig){ TOUCH_3_Seg_PIN, onBattery ? TOUCH_3_Seg_THRESHOLD_BAT : TOUCH_3_Seg_THRESHOLD };
         case Fourt_Seg:
-            return { TOUCH_4_Seg_PIN, (uint8_t)(onBattery ? TOUCH_4_Seg_THRESHOLD_BAT : TOUCH_4_Seg_THRESHOLD) };
+            return (TouchConfig){ TOUCH_4_Seg_PIN, onBattery ? TOUCH_4_Seg_THRESHOLD_BAT : TOUCH_4_Seg_THRESHOLD };
         case Fifth_Seg:
-            return { TOUCH_5_Seg_PIN, (uint8_t)(onBattery ? TOUCH_5_Seg_THRESHOLD_BAT : TOUCH_5_Seg_THRESHOLD) };
+            return (TouchConfig){ TOUCH_5_Seg_PIN, onBattery ? TOUCH_5_Seg_THRESHOLD_BAT : TOUCH_5_Seg_THRESHOLD };
         default:
-            return { GPIO_NUM_NC, 0 };
+            return (TouchConfig){ GPIO_NUM_NC, 0 };
     }
 }
 
@@ -63,35 +64,64 @@ void setTouch(touchStates touch)
     touchMut.unlock();
 
     Serial.println("setTouch done");
+    TouchConfig currentTouch = getTouchConfig(touch);
+    while (touchRead(currentTouch.pin) < currentTouch.threshold)
+    {
+        delay(SMALL_BUTTON_DELAY_MS);
+    }
 }
 
 void loopTouchTask(void *parameter)
 {
     touchActivated = true;
-    touchStates touched;
+    interruptedTouch = No_Seg;
 
     while (true)
     {
-        if (xQueueReceive(touchQueue, &touched, portMAX_DELAY) == pdTRUE)
+        touchStates interruptedTouchCopy;
+
+        touchMut.lock();
+        interruptedTouchCopy = interruptedTouch;
+        touchMut.unlock();
+
+        if (interruptedTouchCopy != No_Seg)
         {
-            setTouch(touched);
+            setTouch(interruptedTouchCopy);
+        }
+
+        touchMut.lock();
+        if (interruptedTouchCopy == interruptedTouch)
+        {
+            interruptedTouch = No_Seg;
+            touchMut.unlock();
             Serial.println("Touch task going to sleep!");
             vTaskSuspend(NULL);
+        }
+        else
+        {
+            touchMut.unlock();
+            Serial.println("Another touch segment activated...");
         }
     }
 }
 
+
 void initTouchTask()
 {
-    touchQueue = xQueueCreate(10, sizeof(touchStates));
-    xTaskCreate(loopTouchTask, "touchTask", 4700, NULL, 12, &touchTask);
+    xTaskCreate(
+        loopTouchTask,
+        "touchTask",
+        4700, // Too much but handling fs logging takes a bit more
+        NULL,
+        12,
+        &touchTask);
 }
 
 void turnOnTouch()
 {
-    if (!touchActivated)
+    if (touchActivated == false)
     {
-        initTouchTask();
-        turnOnTouchInterrupts();
+    initTouchTask();
+    turnOnTouchInterrupts();
     }
 }

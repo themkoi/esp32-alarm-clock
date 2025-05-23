@@ -21,7 +21,7 @@ void createBatteryTask()
   xTaskCreatePinnedToCore(
       manageBattery, // Function to implement the task
       "Battery",     // Task name
-      4096,         // Stack size (words)
+      4096,          // Stack size (words)
       NULL,          // Task input parameter
       3,             // Priority (0 is lowest)
       NULL,          // Task handle
@@ -60,30 +60,32 @@ void manageBattery(void *parameter)
     checkPower();
     if (powerConnected == true)
     {
-      vTaskResume(oledWakeupTaskHandle);
-      vTaskResume(LedTask);
-      esp_pm_config_t pm_config = {
-          .max_freq_mhz = 80,
-          .min_freq_mhz = 10,
-          .light_sleep_enable = true,
-      };
-      esp_pm_configure(&pm_config);
-      Serial.println("Set pm config");
+
       if (previousPowerConnected == false)
       {
-        setTouchInterrupt(TOUCH_1_Seg_PIN,TOUCH_1_Seg_THRESHOLD);
-        setTouchInterrupt(TOUCH_2_Seg_PIN,TOUCH_2_Seg_THRESHOLD);
-        setTouchInterrupt(TOUCH_3_Seg_PIN,TOUCH_3_Seg_THRESHOLD);
-        setTouchInterrupt(TOUCH_4_Seg_PIN,TOUCH_4_Seg_THRESHOLD);
-        setTouchInterrupt(TOUCH_5_Seg_PIN,TOUCH_5_Seg_THRESHOLD);
+        touchSetCycles(0x500, 0x500);
+        setTouchInterrupt(TOUCH_1_Seg_PIN, TOUCH_1_Seg_THRESHOLD);
+        setTouchInterrupt(TOUCH_2_Seg_PIN, TOUCH_2_Seg_THRESHOLD);
+        setTouchInterrupt(TOUCH_3_Seg_PIN, TOUCH_3_Seg_THRESHOLD);
+        setTouchInterrupt(TOUCH_4_Seg_PIN, TOUCH_4_Seg_THRESHOLD);
+        setTouchInterrupt(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD);
+        vTaskResume(oledWakeupTaskHandle);
+        vTaskResume(LedTask);
+        esp_pm_config_t pm_config = {
+            .max_freq_mhz = 80,
+            .min_freq_mhz = 10,
+            .light_sleep_enable = true,
+        };
+        esp_pm_configure(&pm_config);
+        Serial.println("Set pm config");
+        previousPowerConnected = powerConnected;
+        wentToSleep = false;
+        preparingForSleep = false;
+        Serial.println("Power connected");
+        controlCharger();
+        vTaskDelay(pdMS_TO_TICKS(500));
       }
 
-      previousPowerConnected = powerConnected;
-      wentToSleep = false;
-      preparingForSleep = false;
-      Serial.println("Power connected");
-      controlCharger();
-      vTaskDelay(pdMS_TO_TICKS(500));
       if (!WiFi.isConnected() && WiFiTaskRunning == false)
       {
         esp_wifi_start();
@@ -105,11 +107,12 @@ void manageBattery(void *parameter)
         Serial.println("Preparing to go to sleep in 10 seconds");
         sleepStartTime = millis();
         preparingForSleep = true;
-        setTouchInterrupt(TOUCH_1_Seg_PIN,TOUCH_1_Seg_THRESHOLD_BAT);
-        setTouchInterrupt(TOUCH_2_Seg_PIN,TOUCH_2_Seg_THRESHOLD_BAT);
-        setTouchInterrupt(TOUCH_3_Seg_PIN,TOUCH_3_Seg_THRESHOLD_BAT);
-        setTouchInterrupt(TOUCH_4_Seg_PIN,TOUCH_4_Seg_THRESHOLD_BAT);
-        setTouchInterrupt(TOUCH_5_Seg_PIN,TOUCH_5_Seg_THRESHOLD_BAT);
+        touchSetCycles(0x2000, 0x2000);
+        setTouchInterrupt(TOUCH_1_Seg_PIN, TOUCH_1_Seg_THRESHOLD_BAT);
+        setTouchInterrupt(TOUCH_2_Seg_PIN, TOUCH_2_Seg_THRESHOLD_BAT);
+        setTouchInterrupt(TOUCH_3_Seg_PIN, TOUCH_3_Seg_THRESHOLD_BAT);
+        setTouchInterrupt(TOUCH_4_Seg_PIN, TOUCH_4_Seg_THRESHOLD_BAT);
+        setTouchInterrupt(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD_BAT);
       }
 
       if (preparingForSleep == true && wentToSleep == false)
@@ -145,13 +148,13 @@ void manageBattery(void *parameter)
           {
             vTaskDelay(pdMS_TO_TICKS(500));
 
-            if (useAllButtons() != None || useAllTouch() != No_Seg)
+            if (useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true)
             {
-              setTouchInterrupt(TOUCH_1_Seg_PIN,TOUCH_1_Seg_THRESHOLD_BAT);
-              setTouchInterrupt(TOUCH_2_Seg_PIN,TOUCH_2_Seg_THRESHOLD_BAT);
-              setTouchInterrupt(TOUCH_3_Seg_PIN,TOUCH_3_Seg_THRESHOLD_BAT);
-              setTouchInterrupt(TOUCH_4_Seg_PIN,TOUCH_4_Seg_THRESHOLD_BAT);
-              setTouchInterrupt(TOUCH_5_Seg_PIN,TOUCH_5_Seg_THRESHOLD_BAT);
+              setTouchInterrupt(TOUCH_1_Seg_PIN, TOUCH_1_Seg_THRESHOLD_BAT);
+              setTouchInterrupt(TOUCH_2_Seg_PIN, TOUCH_2_Seg_THRESHOLD_BAT);
+              setTouchInterrupt(TOUCH_3_Seg_PIN, TOUCH_3_Seg_THRESHOLD_BAT);
+              setTouchInterrupt(TOUCH_4_Seg_PIN, TOUCH_4_Seg_THRESHOLD_BAT);
+              setTouchInterrupt(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD_BAT);
               esp_pm_config_t pm_config = {
                   .max_freq_mhz = 80,
                   .min_freq_mhz = 10,
@@ -177,11 +180,11 @@ void manageBattery(void *parameter)
 
         if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TOUCHPAD && !goToSleep)
         {
-          setTouchInterrupt(TOUCH_1_Seg_PIN,TOUCH_1_Seg_THRESHOLD_BAT);
-          setTouchInterrupt(TOUCH_2_Seg_PIN,TOUCH_2_Seg_THRESHOLD_BAT);
-          setTouchInterrupt(TOUCH_3_Seg_PIN,TOUCH_3_Seg_THRESHOLD_BAT);
-          setTouchInterrupt(TOUCH_4_Seg_PIN,TOUCH_4_Seg_THRESHOLD_BAT);
-          setTouchInterrupt(TOUCH_5_Seg_PIN,TOUCH_5_Seg_THRESHOLD_BAT);
+          setTouchInterrupt(TOUCH_1_Seg_PIN, TOUCH_1_Seg_THRESHOLD_BAT);
+          setTouchInterrupt(TOUCH_2_Seg_PIN, TOUCH_2_Seg_THRESHOLD_BAT);
+          setTouchInterrupt(TOUCH_3_Seg_PIN, TOUCH_3_Seg_THRESHOLD_BAT);
+          setTouchInterrupt(TOUCH_4_Seg_PIN, TOUCH_4_Seg_THRESHOLD_BAT);
+          setTouchInterrupt(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD_BAT);
           Serial.println("Woke up from touch button");
           vTaskDelay(pdMS_TO_TICKS(500));
           esp_pm_config_t pm_config = {
@@ -195,20 +198,20 @@ void manageBattery(void *parameter)
           vTaskResume(oledWakeupTaskHandle);
           vTaskResume(LedTask);
 
-         while (checkPower() == false && goToSleep == false)
-         {
-             Serial.println("Touch while running uh " + String(inputDetected));
-             vTaskDelay(pdMS_TO_TICKS(500));
+          while (checkPower() == false && goToSleep == false)
+          {
+            Serial.println("Touch while running uh " + String(inputDetected));
+            vTaskDelay(pdMS_TO_TICKS(500));
 
-           if (!checkPower() && !inputDetected && !ringing)
-           {
-             Serial.println("No input detected, going back to sleep...");
-             LedDisplay.clear();
-             vTaskDelay(pdMS_TO_TICKS(200));
-             enableSleep();
-             break;
-           }
-         }
+            if (!checkPower() && !inputDetected && !ringing)
+            {
+              Serial.println("No input detected, going back to sleep...");
+              LedDisplay.clear();
+              vTaskDelay(pdMS_TO_TICKS(200));
+              enableSleep();
+              break;
+            }
+          }
         }
       }
     }
@@ -262,13 +265,12 @@ void initSleep()
   touchSleepWakeUpEnable(TOUCH_4_Seg_PIN, TOUCH_4_Seg_THRESHOLD_SLEEP);
   touchSleepWakeUpEnable(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD_SLEEP);
 
-  setTouchInterrupt(TOUCH_1_Seg_PIN,TOUCH_1_Seg_THRESHOLD_SLEEP);
-  setTouchInterrupt(TOUCH_2_Seg_PIN,TOUCH_2_Seg_THRESHOLD_SLEEP);
-  setTouchInterrupt(TOUCH_3_Seg_PIN,TOUCH_3_Seg_THRESHOLD_SLEEP);
-  setTouchInterrupt(TOUCH_4_Seg_PIN,TOUCH_4_Seg_THRESHOLD_SLEEP);
-  setTouchInterrupt(TOUCH_5_Seg_PIN,TOUCH_5_Seg_THRESHOLD_SLEEP);
+  setTouchInterrupt(TOUCH_1_Seg_PIN, TOUCH_1_Seg_THRESHOLD_SLEEP);
+  setTouchInterrupt(TOUCH_2_Seg_PIN, TOUCH_2_Seg_THRESHOLD_SLEEP);
+  setTouchInterrupt(TOUCH_3_Seg_PIN, TOUCH_3_Seg_THRESHOLD_SLEEP);
+  setTouchInterrupt(TOUCH_4_Seg_PIN, TOUCH_4_Seg_THRESHOLD_SLEEP);
+  setTouchInterrupt(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD_SLEEP);
   delay(100);
-
 
   esp_sleep_enable_touchpad_wakeup();
   initializedSleep = true;

@@ -47,7 +47,6 @@ bool lastFifthSeg = false;
 
 void checkTouchButtons()
 {
-    tone(BUZZER_PIN, NOTE_C7, 1000 / 16);
     if (lastFirstSeg || lastSecondSeg)
     {
         Serial.println("changing page down");
@@ -66,7 +65,7 @@ void checkTouchButtons()
 }
 
 static unsigned long lastHeldCheck = 0;
-const unsigned long debounceDelay = 5; // minimal debounce
+const unsigned long debounceDelay = 50; // minimal debounce
 const unsigned long heldCheckInterval = 10;
 unsigned long lastCycle = 0;
 const unsigned long cycleInterneval = 1000;
@@ -100,6 +99,7 @@ void showMainPage()
 
             turnOffScreensaver();
             cyclePagesUp();
+            tone(BUZZER_PIN, NOTE_C7, 1000 / 16);
             lastCycle = millis();
 
             Serial.println("Held");
@@ -137,6 +137,7 @@ void showMainPage()
         }
         if (millis() - lastCycle >= cycleInterneval)
         {
+            tone(BUZZER_PIN, NOTE_C7, 1000 / 16);
             lastCycle = millis();
             turnOffScreensaver();
             checkTouchButtons();

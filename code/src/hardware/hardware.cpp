@@ -25,8 +25,8 @@ void initHardware()
   delay(2000);
   pinMode(VOLTAGE_DIVIDER_PIN, INPUT);
   pinMode(POWER_STATE_PIN, INPUT);
-  pinMode(CHARGER_CONTROL_PIN, OUTPUT);
   pinMode(HALL_SWITCH, INPUT);
+  pinMode(CHARGER_CONTROL_PIN, OUTPUT);
   initButtons();
   initTouch();
   initBuzzer();
@@ -80,11 +80,12 @@ void initLightSensor()
   lightMeter.configureMeasurement(0x00, 0x02);
 }
 
-void initTouch() {
-  touchSetCycles(0x2000, 0x2000);
+void initTouch()
+{
+  touchSetCycles(0x500, 0x500);
   turnOnTouch();
 }
- 
+
 void initButtons()
 {
   pinMode(UP_PIN, INPUT_PULLUP);
