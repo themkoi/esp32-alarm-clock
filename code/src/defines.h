@@ -149,7 +149,7 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 
 // Charts
 #define CHART_READINGS 55 // Number of readings to keep
-#define INTERVAL_CHARTS 300000 // How often to read data for charts 
+#define INTERVAL_CHARTS 1570909 // How often to read data for charts 
 #define BOOL_STR(b) ((b) ? String("True") : String("False")) // dont touch
 
 #include "hardware/pitches.h"

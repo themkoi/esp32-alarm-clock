@@ -118,7 +118,7 @@ void oledWakeupTask(void *pvParameters)
 
 void dimmingTask(void *pvParameters)
 {
-    unsigned long intervalLight = 60000;
+    unsigned long previousMillisChart = 0;
     unsigned long previousMillisLight = 0;
 
     unsigned long previousMillisDimming = 0;
@@ -132,7 +132,7 @@ void dimmingTask(void *pvParameters)
         dimmingTaskRunning = true;
         unsigned long currentMillis = millis();
 
-        if (currentMillis - previousMillisLight >= INTERVAL_CHARTS)
+        if (currentMillis - previousMillisChart >= INTERVAL_CHARTS)
         {
             lightLevel = getLightLevel();
             for (int i = 0; i < CHART_READINGS - 1; i++)
@@ -140,9 +140,10 @@ void dimmingTask(void *pvParameters)
                 lightArray[i] = lightArray[i + 1];
             }
             lightArray[CHART_READINGS - 1] = lightLevel;
-            previousMillisLight = currentMillis;
+            previousMillisChart = currentMillis;
         }
-        else if (currentMillis - previousMillisLight >= intervalDimming)
+
+        if (currentMillis - previousMillisLight >= intervalDimming)
         {
             lightLevel = getLightLevel();
             previousMillisLight = currentMillis;
