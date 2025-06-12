@@ -115,15 +115,15 @@ void showMainPage()
             bool stillHeld = false;
 
             if (lastFirstSeg)
-                stillHeld |= touchRead(TOUCH_1_Seg_PIN) < (checkPower() ? TOUCH_1_Seg_THRESHOLD : TOUCH_1_Seg_THRESHOLD_BAT);
+                stillHeld |= touchRead(TOUCH_1_Seg_PIN) < (powerConnected == true ? TOUCH_1_Seg_THRESHOLD : TOUCH_1_Seg_THRESHOLD_BAT);
             if (lastSecondSeg)
-                stillHeld |= touchRead(TOUCH_2_Seg_PIN) < (checkPower() ? TOUCH_2_Seg_THRESHOLD : TOUCH_2_Seg_THRESHOLD_BAT);
+                stillHeld |= touchRead(TOUCH_2_Seg_PIN) < (powerConnected == true  ? TOUCH_2_Seg_THRESHOLD : TOUCH_2_Seg_THRESHOLD_BAT);
             if (lastThirdSeg)
-                stillHeld |= touchRead(TOUCH_3_Seg_PIN) < (checkPower() ? TOUCH_3_Seg_THRESHOLD : TOUCH_3_Seg_THRESHOLD_BAT);
+                stillHeld |= touchRead(TOUCH_3_Seg_PIN) < (powerConnected == true ? TOUCH_3_Seg_THRESHOLD : TOUCH_3_Seg_THRESHOLD_BAT);
             if (lastFourthSeg)
-                stillHeld |= touchRead(TOUCH_4_Seg_PIN) < (checkPower() ? TOUCH_4_Seg_THRESHOLD : TOUCH_4_Seg_THRESHOLD_BAT);
+                stillHeld |= touchRead(TOUCH_4_Seg_PIN) < (powerConnected == true ? TOUCH_4_Seg_THRESHOLD : TOUCH_4_Seg_THRESHOLD_BAT);
             if (lastFifthSeg)
-                stillHeld |= touchRead(TOUCH_5_Seg_PIN) < (checkPower() ? TOUCH_5_Seg_THRESHOLD : TOUCH_5_Seg_THRESHOLD_BAT);
+                stillHeld |= touchRead(TOUCH_5_Seg_PIN) < (powerConnected == true ? TOUCH_5_Seg_THRESHOLD : TOUCH_5_Seg_THRESHOLD_BAT);
 
             if (!stillHeld)
             {

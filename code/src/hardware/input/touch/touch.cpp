@@ -38,7 +38,7 @@ typedef struct {
 } TouchConfig;
 
 TouchConfig getTouchConfig(touchStates state) {
-    bool onBattery = !checkPower();
+    bool onBattery = !powerConnected;
 
     switch (state) {
         case First_Seg:

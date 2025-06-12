@@ -148,14 +148,14 @@ void dimmingTask(void *pvParameters)
             previousMillisLight = currentMillis;
         }
 
-        if (currentMillis - previousMillisState >= intervalState && WiFi.isConnected() && powerConnected && WiFi.SSID() == SSID1)
+        if (currentMillis - previousMillisState >= intervalState && WiFi.isConnected()&& WiFi.SSID() == SSID1)
         {
             mmwaveState = getMmwaveState();
             previousMillisState = currentMillis;
             delay(100);
         }
 
-        if (currentMillis - previousMillisDimming >= intervalDimming && powerConnected)
+        if (currentMillis - previousMillisDimming >= intervalDimming)
         {
             dimOledDisplay();
             maxBrightness = false;

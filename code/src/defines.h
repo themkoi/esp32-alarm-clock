@@ -100,18 +100,18 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 #define TOUCH_5_Seg_THRESHOLD 5
 
 // On battery
-#define TOUCH_1_Seg_THRESHOLD_BAT 28
-#define TOUCH_2_Seg_THRESHOLD_BAT 30
-#define TOUCH_3_Seg_THRESHOLD_BAT 32
-#define TOUCH_4_Seg_THRESHOLD_BAT 35
-#define TOUCH_5_Seg_THRESHOLD_BAT 40
+#define TOUCH_1_Seg_THRESHOLD_BAT 1
+#define TOUCH_2_Seg_THRESHOLD_BAT 1
+#define TOUCH_3_Seg_THRESHOLD_BAT 1
+#define TOUCH_4_Seg_THRESHOLD_BAT 1
+#define TOUCH_5_Seg_THRESHOLD_BAT 1
 
 // While Sleeping
-#define TOUCH_1_Seg_THRESHOLD_SLEEP 27
-#define TOUCH_2_Seg_THRESHOLD_SLEEP 28
-#define TOUCH_3_Seg_THRESHOLD_SLEEP 31
-#define TOUCH_4_Seg_THRESHOLD_SLEEP 33
-#define TOUCH_5_Seg_THRESHOLD_SLEEP 36
+#define TOUCH_1_Seg_THRESHOLD_SLEEP 1
+#define TOUCH_2_Seg_THRESHOLD_SLEEP 1
+#define TOUCH_3_Seg_THRESHOLD_SLEEP 1
+#define TOUCH_4_Seg_THRESHOLD_SLEEP 1
+#define TOUCH_5_Seg_THRESHOLD_SLEEP 1
 
 // Menus
 #define LOOP_FUNCTION_TIMEOUT_MS 60000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
