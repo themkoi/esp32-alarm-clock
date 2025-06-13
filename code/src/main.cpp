@@ -87,15 +87,14 @@ void setup()
     readAlarms();
     createLedDisplayTask();
     createDimmingTask();
+    createAlarmTask();
+    initMenus();
     createBatteryTask();
     createTempTask();
     createTimeTask();
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     setupScreensaver();
-    createAlarmTask();
   }
-  initMenus();
-  delay(100);
 }
 
 void loop()

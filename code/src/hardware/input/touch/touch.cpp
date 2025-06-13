@@ -41,16 +41,26 @@ TouchConfig getTouchConfig(touchStates state) {
     bool onBattery = !powerConnected;
 
     switch (state) {
-        case First_Seg:
-            return (TouchConfig){ TOUCH_1_Seg_PIN, onBattery ? TOUCH_1_Seg_THRESHOLD_BAT : TOUCH_1_Seg_THRESHOLD };
-        case Second_Seg:
-            return (TouchConfig){ TOUCH_2_Seg_PIN, onBattery ? TOUCH_2_Seg_THRESHOLD_BAT : TOUCH_2_Seg_THRESHOLD };
-        case Third_Seg:
-            return (TouchConfig){ TOUCH_3_Seg_PIN, onBattery ? TOUCH_3_Seg_THRESHOLD_BAT : TOUCH_3_Seg_THRESHOLD };
-        case Fourt_Seg:
-            return (TouchConfig){ TOUCH_4_Seg_PIN, onBattery ? TOUCH_4_Seg_THRESHOLD_BAT : TOUCH_4_Seg_THRESHOLD };
-        case Fifth_Seg:
-            return (TouchConfig){ TOUCH_5_Seg_PIN, onBattery ? TOUCH_5_Seg_THRESHOLD_BAT : TOUCH_5_Seg_THRESHOLD };
+        case First_Seg: {
+            uint8_t thresh = onBattery ? TOUCH_1_Seg_THRESHOLD_BAT : TOUCH_1_Seg_THRESHOLD;
+            return (TouchConfig){ TOUCH_1_Seg_PIN, thresh };
+        }
+        case Second_Seg: {
+            uint8_t thresh = onBattery ? TOUCH_2_Seg_THRESHOLD_BAT : TOUCH_2_Seg_THRESHOLD;
+            return (TouchConfig){ TOUCH_2_Seg_PIN, thresh };
+        }
+        case Third_Seg: {
+            uint8_t thresh = onBattery ? TOUCH_3_Seg_THRESHOLD_BAT : TOUCH_3_Seg_THRESHOLD;
+            return (TouchConfig){ TOUCH_3_Seg_PIN, thresh };
+        }
+        case Fourt_Seg: {
+            uint8_t thresh = onBattery ? TOUCH_4_Seg_THRESHOLD_BAT : TOUCH_4_Seg_THRESHOLD;
+            return (TouchConfig){ TOUCH_4_Seg_PIN, thresh };
+        }
+        case Fifth_Seg: {
+            uint8_t thresh = onBattery ? TOUCH_5_Seg_THRESHOLD_BAT : TOUCH_5_Seg_THRESHOLD;
+            return (TouchConfig){ TOUCH_5_Seg_PIN, thresh };
+        }
         default:
             return (TouchConfig){ GPIO_NUM_NC, 0 };
     }
@@ -63,7 +73,7 @@ void setTouch(touchStates touch)
     touchPressed = touch;
     touchMut.unlock();
 
-    Serial.println("setTouch done");
+    Serial.println("setTouch done" + String(touch));
     TouchConfig currentTouch = getTouchConfig(touch);
     while (touchRead(currentTouch.pin) < currentTouch.threshold)
     {

@@ -3,14 +3,15 @@
 
 #include "../defines.h"
 
-void onAlarm();
 void createAlarmTask();
 void ringAlarm(void *parameter);
 
 void disableAllAlarms();
-void enableAllAlarms();  // <-- Added semicolon here
+void enableAllAlarms();
 
 void initialzeAlarmArray();
+
+void checkAlarms();
 
 struct Alarm {
     bool exists;
@@ -23,6 +24,8 @@ struct Alarm {
 
 extern bool ringing;
 
-extern Alarm alarms[MAX_ALARMS];  // Declaration of the array
+extern TaskHandle_t alarmTaskHandle;
+
+extern Alarm alarms[MAX_ALARMS];
 
 #endif

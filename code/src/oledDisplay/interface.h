@@ -16,4 +16,6 @@ extern bool menuRunning;
 extern bool idleEnabled;
 extern bool exitLoopFunction;
 
+extern TaskHandle_t menuTaskHandle;
+
 #endif

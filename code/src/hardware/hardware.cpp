@@ -22,7 +22,6 @@ void initHardware()
       .light_sleep_enable = true,
   };
   esp_pm_configure(&pm_config);
-  delay(2000);
   pinMode(VOLTAGE_DIVIDER_PIN, INPUT);
   pinMode(POWER_STATE_PIN, INPUT);
   pinMode(HALL_SWITCH, INPUT);

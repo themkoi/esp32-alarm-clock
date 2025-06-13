@@ -3,6 +3,8 @@
 
 Alarm alarms[MAX_ALARMS];
 
+TaskHandle_t alarmTaskHandle;
+
 void ringAlarm(void *parameter);
 void createRiningingTask();
 
@@ -29,7 +31,7 @@ void createAlarmTask()
       2048,           // Stack size (words)
       NULL,            // Task input parameter
       1,               // Priority (0 is lowest)
-      NULL,            // Task handle
+      &alarmTaskHandle,            // Task handle
       0                // Core to run the task on (0 or 1)
   );
 }
@@ -46,14 +48,6 @@ void checkAlarms()
             checkAlarm(i);
         }
     }
-    if (powerConnected == true)
-    {
-        vTaskDelay(pdMS_TO_TICKS(1 * 1000));
-    }
-    else
-    {
-        vTaskDelay(pdMS_TO_TICKS(200));
-    }
 }
 
 void checkAlarmsTask(void *pvParameters)
@@ -61,6 +55,7 @@ void checkAlarmsTask(void *pvParameters)
   while (true)
   {
     checkAlarms();
+    vTaskDelay(pdMS_TO_TICKS(45 * 1000));
   }
 }
 

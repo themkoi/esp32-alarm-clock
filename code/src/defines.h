@@ -100,18 +100,18 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 #define TOUCH_5_Seg_THRESHOLD 5
 
 // On battery
-#define TOUCH_1_Seg_THRESHOLD_BAT 1
-#define TOUCH_2_Seg_THRESHOLD_BAT 1
-#define TOUCH_3_Seg_THRESHOLD_BAT 1
-#define TOUCH_4_Seg_THRESHOLD_BAT 1
-#define TOUCH_5_Seg_THRESHOLD_BAT 1
+#define TOUCH_1_Seg_THRESHOLD_BAT 29
+#define TOUCH_2_Seg_THRESHOLD_BAT 30
+#define TOUCH_3_Seg_THRESHOLD_BAT 32
+#define TOUCH_4_Seg_THRESHOLD_BAT 33
+#define TOUCH_5_Seg_THRESHOLD_BAT 35
 
 // While Sleeping
-#define TOUCH_1_Seg_THRESHOLD_SLEEP 1
-#define TOUCH_2_Seg_THRESHOLD_SLEEP 1
-#define TOUCH_3_Seg_THRESHOLD_SLEEP 1
-#define TOUCH_4_Seg_THRESHOLD_SLEEP 1
-#define TOUCH_5_Seg_THRESHOLD_SLEEP 1
+#define TOUCH_1_Seg_THRESHOLD_SLEEP 29
+#define TOUCH_2_Seg_THRESHOLD_SLEEP 32
+#define TOUCH_3_Seg_THRESHOLD_SLEEP 33
+#define TOUCH_4_Seg_THRESHOLD_SLEEP 33
+#define TOUCH_5_Seg_THRESHOLD_SLEEP 40
 
 // Menus
 #define LOOP_FUNCTION_TIMEOUT_MS 60000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
@@ -143,7 +143,7 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 #define BATT_TARGET_VOLTAGE 3.85   // Target voltage in volts
 #define BATT_HYSTERESIS 0.15       // charging Hysteresis in volts
 
-#define TIMER_WAKUP_TIME 5000 // How long it will stay awake after waking up from timer
+#define TIMER_WAKUP_TIME 500 // How long it will stay awake after waking up from timer
 #define GPIO_WAKUP_TIME 30000 // How long to stay awake after waking up from input
 #define SLEEPING_TIME 50 * 1000000 // In microseconds how long it will sleep for 
 

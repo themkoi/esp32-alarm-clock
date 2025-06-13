@@ -8,8 +8,6 @@ bool charging = false;
 
 bool wentToSleep = false;
 
-bool goToSleep = false;
-
 void enableSleep();
 void initSleep();
 
@@ -53,7 +51,7 @@ bool wokeUp = true;
 void manageBattery(void *parameter)
 {
   const unsigned long batCheInterval = 15000;
-  const unsigned long batteryWaitTimeout = 30000;
+  const unsigned long batteryWaitTimeout = 3000;
   unsigned long lastRunBatChe = 0;
   unsigned long batterySettingsTime = 0;
   unsigned long wakeupTime = 0;
@@ -75,7 +73,10 @@ void manageBattery(void *parameter)
       lastRunBatChe = now;
       powerConnected = checkPower();
       batteryVoltage = getBatteryVoltage();
-      controlCharger();
+      if (powerConnected == true)
+      {
+        controlCharger();
+      }
     }
 
     if (powerConnected)
@@ -83,9 +84,12 @@ void manageBattery(void *parameter)
       if (!setPowerSettings)
       {
         Serial.println("Setting power settings");
+        touchSetCycles(0x500, 0x500);
+        lightMeter.setActiveMode();
         vTaskResume(oledWakeupTaskHandle);
         vTaskResume(LedTask);
-        touchSetCycles(0x500, 0x500);
+        vTaskResume(alarmTaskHandle);
+        vTaskResume(menuTaskHandle);
         setTouchInterrupt(TOUCH_1_Seg_PIN, TOUCH_1_Seg_THRESHOLD);
         setTouchInterrupt(TOUCH_2_Seg_PIN, TOUCH_2_Seg_THRESHOLD);
         setTouchInterrupt(TOUCH_3_Seg_PIN, TOUCH_3_Seg_THRESHOLD);
@@ -113,18 +117,24 @@ void manageBattery(void *parameter)
     }
     else
     {
+
       if (setPowerSettings)
       {
         Serial.println("Setting battery settings");
         turnOffWifi();
+        touchSetCycles(0x2000, 0x2000);
         vTaskSuspend(oledWakeupTaskHandle);
         vTaskSuspend(LedTask);
         vTaskSuspend(dimmingTaskHandle);
+        vTaskSuspend(alarmTaskHandle);
+        vTaskSuspend(menuTaskHandle);
         setTouchInterrupt(TOUCH_1_Seg_PIN, TOUCH_1_Seg_THRESHOLD_BAT);
         setTouchInterrupt(TOUCH_2_Seg_PIN, TOUCH_2_Seg_THRESHOLD_BAT);
         setTouchInterrupt(TOUCH_3_Seg_PIN, TOUCH_3_Seg_THRESHOLD_BAT);
         setTouchInterrupt(TOUCH_4_Seg_PIN, TOUCH_4_Seg_THRESHOLD_BAT);
         setTouchInterrupt(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD_BAT);
+        digitalWrite(CHARGER_CONTROL_PIN, LOW);
+        lightMeter.setStandbyMode();
         batterySettingsTime = now;
         waitingForPower = true;
         setPowerSettings = false;
@@ -141,13 +151,23 @@ void manageBattery(void *parameter)
 
       if (waitingForPower == true)
       {
-        if (useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true)
+        if ((useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true) || ringing == true)
         {
           waitForInput = true;
+          vTaskResume(menuTaskHandle);
           inputDetected = false;
           manager.sendOledAction(OLED_ENABLE);
           LedDisplay.setBrightness(2);
           LedDisplay.showNumberDecEx(hour() * 100 + minute(), 0b11100000, true);
+          if (useAllTouch() != No_Seg)
+          {
+            useTouch();
+          }
+
+          if (useAllButtons() != None)
+          {
+            useButton();
+          }
           batterySettingsTime = now;
         }
 
@@ -163,26 +183,32 @@ void manageBattery(void *parameter)
 
       if (batterySleepMode)
       {
-        esp_sleep_wakeup_cause_t wakeCause = esp_sleep_get_wakeup_cause();
-
-        if (wakeCause == ESP_SLEEP_WAKEUP_TIMER)
+        if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER)
         {
           if (!wokeUp)
           {
             Serial.println("Woke up, waiting for input...");
+            powerConnected = checkPower();
             wokeUp = true;
             waitForInput = false;
             wakeupTime = now;
           }
 
-          if (useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true)
+          if ((useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true) || ringing == true)
           {
-            Serial.println("Input detected waiting more");
-            waitForInput = true;
             inputDetected = false;
-            manager.sendOledAction(OLED_ENABLE);
-            LedDisplay.setBrightness(2);
-            LedDisplay.showNumberDecEx(hour() * 100 + minute(), 0b11100000, true);
+            if (waitForInput == false)
+            {
+              Serial.println("Input or Alarm detected waiting more in timer");
+              vTaskResume(menuTaskHandle);
+              waitForInput = true;
+              manager.sendOledAction(OLED_ENABLE);
+              LedDisplay.setBrightness(2);
+              LedDisplay.showNumberDecEx(hour() * 100 + minute(), 0b11100000, true);
+            }
+            Serial.println("resetting sleep timer");
+            delay(10);
+
             wakeupTime = now;
           }
 
@@ -205,23 +231,32 @@ void manageBattery(void *parameter)
             }
           }
         }
-        if (wakeCause == ESP_SLEEP_WAKEUP_TIMER)
+        if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TOUCHPAD)
         {
           if (!wokeUp)
           {
             Serial.println("Woke up, waiting for input...");
+            powerConnected = checkPower();
             wokeUp = true;
             wakeupTime = now;
             inputDetected = true;
           }
 
-          if ((useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true))
+          if ((useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true) || ringing == true)
           {
-            Serial.println("Input detected waiting more");
             inputDetected = false;
-            manager.sendOledAction(OLED_ENABLE);
-            LedDisplay.setBrightness(2);
-            LedDisplay.showNumberDecEx(hour() * 100 + minute(), 0b11100000, true);
+            if (waitForInput == false)
+            {
+              Serial.println("Input or Alarm detected waiting more in touch");
+              vTaskResume(menuTaskHandle);
+              waitForInput = true;
+              manager.sendOledAction(OLED_ENABLE);
+              LedDisplay.setBrightness(2);
+              LedDisplay.showNumberDecEx(hour() * 100 + minute(), 0b11100000, true);
+            }
+            Serial.println("resetting sleep timer");
+            delay(10);
+
             wakeupTime = now;
           }
 
@@ -264,16 +299,20 @@ void controlCharger()
   Serial.println(charging ? "ON" : "OFF");
 }
 
+uint64_t pinToMask(uint8_t pin)
+{
+  return ((uint64_t)(((uint64_t)1) << pin));
+}
+
 void initSleep()
 {
   touchSleepWakeUpEnable(TOUCH_1_Seg_PIN, TOUCH_1_Seg_THRESHOLD_SLEEP);
-  touchSleepWakeUpEnable(TOUCH_2_Seg_PIN, TOUCH_2_Seg_THRESHOLD_SLEEP);
-  touchSleepWakeUpEnable(TOUCH_3_Seg_PIN, TOUCH_3_Seg_THRESHOLD_SLEEP);
-  touchSleepWakeUpEnable(TOUCH_4_Seg_PIN, TOUCH_4_Seg_THRESHOLD_SLEEP);
-  touchSleepWakeUpEnable(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD_SLEEP);
+  // touchSleepWakeUpEnable(TOUCH_2_Seg_PIN, TOUCH_2_Seg_THRESHOLD_SLEEP);
+  // touchSleepWakeUpEnable(TOUCH_3_Seg_PIN, TOUCH_3_Seg_THRESHOLD_SLEEP);
+  // touchSleepWakeUpEnable(TOUCH_4_Seg_PIN, TOUCH_4_Seg_THRESHOLD_SLEEP);
+  // touchSleepWakeUpEnable(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD_SLEEP);
 
   esp_sleep_enable_touchpad_wakeup();
-  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
 
   esp_sleep_enable_timer_wakeup(SLEEPING_TIME);
 }
@@ -282,6 +321,7 @@ void enableSleep()
 {
 
   delay(500);
+  vTaskSuspend(menuTaskHandle);
   manager.sendOledAction(OLED_DISABLE);
   display.ssd1306_command(SSD1306_DISPLAYOFF); // Just to make sure because manager can take a bit before reacting if many write operations are ordered
   delay(500);
@@ -308,14 +348,14 @@ void enableSleep()
   {
     Serial.printf("Unexpected sleep error: %d\n", sleep_result);
   }
-  esp_pm_config_t pm_config = {
-      .max_freq_mhz = 40,
-      .min_freq_mhz = 10,
-      .light_sleep_enable = true,
-  };
-  esp_pm_configure(&pm_config);
+  setTouchInterrupt(TOUCH_1_Seg_PIN, TOUCH_1_Seg_THRESHOLD_BAT);
+  setTouchInterrupt(TOUCH_2_Seg_PIN, TOUCH_2_Seg_THRESHOLD_BAT);
+  setTouchInterrupt(TOUCH_3_Seg_PIN, TOUCH_3_Seg_THRESHOLD_BAT);
+  setTouchInterrupt(TOUCH_4_Seg_PIN, TOUCH_4_Seg_THRESHOLD_BAT);
+  setTouchInterrupt(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD_BAT);
   syncTimeLibWithRTC();
   checkPower();
+  checkAlarms();
   delay(200);
 }
 

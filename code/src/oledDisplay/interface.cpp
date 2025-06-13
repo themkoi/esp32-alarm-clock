@@ -3,6 +3,8 @@
 #define BUTTONS_OFFSET 1
 #define BUTTON_HEIGHT 10
 
+TaskHandle_t menuTaskHandle;
+
 struct entryMenu
 {
     String text;
@@ -45,7 +47,6 @@ Submenu *menuStack[MAX_STACK_SIZE];
 int stackPointer = -1;
 
 unsigned long lastInputTime = 0;
-bool startedLoop = false;
 
 bool menuRunning = true;
 
@@ -129,8 +130,7 @@ void showMenu()
         int16_t x1, y1;
         uint16_t textWidth, textHeight;
         display.getTextBounds(displayText, 0, 0, &x1, &y1, &textWidth, &textHeight);
-        Serial.println("width:" + String(textWidth));
-        Serial.println("height:" + String(textHeight));
+
 
         // Adjust for smaller fonts to ensure proper line height
         if (textHeight < 10)
@@ -330,49 +330,36 @@ void runLoopFunction(void (*loopFunction)())
 
 void handleConfirm()
 {
-    if (startedLoop == true)
+    if (data.isSubmenu && data.currentSubmenu != nullptr)
     {
-        if (data.isSubmenu && data.currentSubmenu != nullptr)
+        entryMenu selectedEntry = data.currentSubmenu[data.currentButton];
+
+        if (selectedEntry.function != nullptr)
         {
-            entryMenu selectedEntry = data.currentSubmenu[data.currentButton];
-
-            if (selectedEntry.function != nullptr)
-            {
-                selectedEntry.function();
-                delay(1);
-            }
-
-            if (selectedEntry.submenu != nullptr)
-            {
-                pushSubmenu(selectedEntry.submenu);
-                data.currentSubmenu = selectedEntry.submenu->entries;
-                data.submenuCount = selectedEntry.submenu->count;
-                data.menuName = selectedEntry.submenu->name;
-                data.isSubmenu = true;
-                data.currentButton = 0;
-                showMenu();
-            }
-            else if (selectedEntry.loopFunction != nullptr)
-            {
-                runLoopFunction(selectedEntry.loopFunction);
-            }
+            selectedEntry.function();
+            delay(1);
         }
-        else if (data.entryList[data.currentButton].function != nullptr)
+
+        if (selectedEntry.submenu != nullptr)
         {
-            data.entryList[data.currentButton].function();
-
-            if (data.entryList[data.currentButton].submenu != nullptr)
-            {
-                pushSubmenu(data.entryList[data.currentButton].submenu);
-                data.currentSubmenu = data.entryList[data.currentButton].submenu->entries;
-                data.submenuCount = data.entryList[data.currentButton].submenu->count;
-                data.menuName = data.entryList[data.currentButton].submenu->name;
-                data.isSubmenu = true;
-                data.currentButton = 0;
-                showMenu();
-            }
+            pushSubmenu(selectedEntry.submenu);
+            data.currentSubmenu = selectedEntry.submenu->entries;
+            data.submenuCount = selectedEntry.submenu->count;
+            data.menuName = selectedEntry.submenu->name;
+            data.isSubmenu = true;
+            data.currentButton = 0;
+            showMenu();
         }
-        else if (data.entryList[data.currentButton].submenu != nullptr)
+        else if (selectedEntry.loopFunction != nullptr)
+        {
+            runLoopFunction(selectedEntry.loopFunction);
+        }
+    }
+    else if (data.entryList[data.currentButton].function != nullptr)
+    {
+        data.entryList[data.currentButton].function();
+
+        if (data.entryList[data.currentButton].submenu != nullptr)
         {
             pushSubmenu(data.entryList[data.currentButton].submenu);
             data.currentSubmenu = data.entryList[data.currentButton].submenu->entries;
@@ -382,10 +369,20 @@ void handleConfirm()
             data.currentButton = 0;
             showMenu();
         }
-        else if (data.entryList[data.currentButton].loopFunction != nullptr)
-        {
-            runLoopFunction(data.entryList[data.currentButton].loopFunction);
-        }
+    }
+    else if (data.entryList[data.currentButton].submenu != nullptr)
+    {
+        pushSubmenu(data.entryList[data.currentButton].submenu);
+        data.currentSubmenu = data.entryList[data.currentButton].submenu->entries;
+        data.submenuCount = data.entryList[data.currentButton].submenu->count;
+        data.menuName = data.entryList[data.currentButton].submenu->name;
+        data.isSubmenu = true;
+        data.currentButton = 0;
+        showMenu();
+    }
+    else if (data.entryList[data.currentButton].loopFunction != nullptr)
+    {
+        runLoopFunction(data.entryList[data.currentButton].loopFunction);
     }
 }
 
@@ -960,42 +957,36 @@ void handleMenus()
 
 void menuTask(void *parameter)
 {
-    startedLoop = true;
     while (true)
     {
-        if (goToSleep == false)
-        {
-            handleMenus();
-        }
-        vTaskDelay(10); // Adjust delay as needed
+        handleMenus();
+        vTaskDelay(10);
     }
 }
 
-void refreshAlarmsSubmenu() {
-    // 1. Lock critical section (prevent interrupts during update)
-    
-    // 2. Clear existing entries but keep the submenu structure
-    if (alarmsSubmenu) {
-        // Wipe existing entries but don't delete the array
+void refreshAlarmsSubmenu()
+{
+    if (alarmsSubmenu)
+    {
         memset(alarmsSubmenu->entries, 0, sizeof(entryMenu) * alarmsSubmenu->maxMenus);
         alarmsSubmenu->count = 0;
-        
-        // 3. Rebuild contents in-place
+
         addEntryToSubmenu(alarmsSubmenu, "Add New Alarm", addNewAlarm, nullptr, &DejaVu_LGC_Sans_Bold_10);
-        
-        for (int i = 0; i < MAX_ALARMS; ++i) {
-            if (alarms[i].exists) {
+
+        for (int i = 0; i < MAX_ALARMS; ++i)
+        {
+            if (alarms[i].exists)
+            {
                 addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &font4pt7b);
             }
         }
-        
-        // 4. Update active references if currently viewing
-        if (data.isSubmenu && data.currentSubmenu == alarmsSubmenu->entries) {
+
+        if (data.isSubmenu && data.currentSubmenu == alarmsSubmenu->entries)
+        {
             data.submenuCount = alarmsSubmenu->count;
-            showMenu(); // Only refresh if we're in this menu
+            showMenu();
         }
     }
-    
 }
 
 void disableAlarmsIn()
@@ -1052,7 +1043,7 @@ void initMenus()
         {"Save Alarms", saveAlarms, nullptr, nullptr, nullptr},
         {"Disable All Alarms", disableAlarmsIn, nullptr, nullptr, nullptr},
         {"Enable All Alarms", enableAlarmsIn, nullptr, nullptr, nullptr},
-        {"Refresh Alarms", refreshAlarmsSubmenu, nullptr, nullptr, nullptr}, // should not be needed but just in case
+        {"Refresh Alarms", refreshAlarmsSubmenu, nullptr, nullptr, nullptr},
     };
     Submenu *manageAlarmsSubmenu = new Submenu{"Alarm Ctrl", manageAlarmsItems, 4, 4};
 
@@ -1080,7 +1071,7 @@ void initMenus()
         4096,        // Stack size in bytes
         NULL,        // Task parameter
         3,           // Task priority
-        NULL,        // Task handle
+        &menuTaskHandle,        // Task handle
         0            // Core number (0 or 1 for ESP32)
     );
 }
