@@ -100,14 +100,14 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 #define TOUCH_5_Seg_THRESHOLD 5
 
 // On battery
-#define TOUCH_1_Seg_THRESHOLD_BAT 29
-#define TOUCH_2_Seg_THRESHOLD_BAT 30
-#define TOUCH_3_Seg_THRESHOLD_BAT 32
-#define TOUCH_4_Seg_THRESHOLD_BAT 33
-#define TOUCH_5_Seg_THRESHOLD_BAT 35
+#define TOUCH_1_Seg_THRESHOLD_BAT 73
+#define TOUCH_2_Seg_THRESHOLD_BAT 77
+#define TOUCH_3_Seg_THRESHOLD_BAT 80
+#define TOUCH_4_Seg_THRESHOLD_BAT 85
+#define TOUCH_5_Seg_THRESHOLD_BAT 95
 
 // While Sleeping
-#define TOUCH_1_Seg_THRESHOLD_SLEEP 29
+#define TOUCH_1_Seg_THRESHOLD_SLEEP 72
 #define TOUCH_2_Seg_THRESHOLD_SLEEP 32
 #define TOUCH_3_Seg_THRESHOLD_SLEEP 33
 #define TOUCH_4_Seg_THRESHOLD_SLEEP 33

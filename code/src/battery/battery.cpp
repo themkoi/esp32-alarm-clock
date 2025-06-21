@@ -122,7 +122,7 @@ void manageBattery(void *parameter)
       {
         Serial.println("Setting battery settings");
         turnOffWifi();
-        touchSetCycles(0x2000, 0x2000);
+        touchSetCycles(0x5000, 0x5000);
         vTaskSuspend(oledWakeupTaskHandle);
         vTaskSuspend(LedTask);
         vTaskSuspend(dimmingTaskHandle);
@@ -313,7 +313,7 @@ void initSleep()
   // touchSleepWakeUpEnable(TOUCH_5_Seg_PIN, TOUCH_5_Seg_THRESHOLD_SLEEP);
 
   esp_sleep_enable_touchpad_wakeup();
-
+  esp_sleep_enable_ext1_wakeup(1ULL << POWER_STATE_PIN, ESP_EXT1_WAKEUP_ANY_HIGH);
   esp_sleep_enable_timer_wakeup(SLEEPING_TIME);
 }
 
