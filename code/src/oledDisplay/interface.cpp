@@ -867,7 +867,7 @@ void manageAlarms()
         redrawDisplay();
     }
 
-    if (shouldExitLoop())
+    if (shouldExitLoop() && data.currentButton != 0)
     {
         AlarmMenuUpdate = true;
         exitLoopFunction = true;
