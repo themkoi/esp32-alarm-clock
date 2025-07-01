@@ -131,7 +131,6 @@ void showMenu()
         uint16_t textWidth, textHeight;
         display.getTextBounds(displayText, 0, 0, &x1, &y1, &textWidth, &textHeight);
 
-
         // Adjust for smaller fonts to ensure proper line height
         if (textHeight < 10)
         {
@@ -709,25 +708,26 @@ void manageAlarms()
 
         display.setFont(&DejaVu_LGC_Sans_Bold_9);
         if (inDaySelectionMode)
-            drawDaySelectionGroup(2, 50);
+            drawDaySelectionGroup(2, 51);
         else
         {
             int startX = 2;
             labelWidth = 0;
             for (int i = 0; i < 7; i++)
             {
-                drawDaySelection(startX, 50, alarms[alarmIndex].days[i], i, false, false);
+                drawDaySelection(startX, 51, alarms[alarmIndex].days[i], i, false, false);
                 startX += labelWidth + 5;
             }
             if (currentState == 3)
-                display.drawRect(0, 41 - 3, 125, 16, WHITE);
+                display.drawRect(0, 42 - 3, 125, 16, WHITE);
         }
 
         display.setTextColor(WHITE, BLACK);
         display.setFont(&DejaVu_LGC_Sans_Bold_10);
         drawMenuOption("Enabled: " + String(alarms[alarmIndex].enabled ? "Yes" : "No"), 1, 37, !inDaySelectionMode && currentState == 2, isEditing && currentState == 2);
-        drawMenuOption("Sound: " + String(alarms[alarmIndex].soundOn ? "On" : "Off"), 1, 63, !inDaySelectionMode && currentState == 4, isEditing && currentState == 4);
-        drawBitmapOption(SCREEN_WIDTH - 30, 20, !inDaySelectionMode && currentState == 5, !inDaySelectionMode && isEditing && currentState == 5);
+        drawMenuOption("Sound:" + String(alarms[alarmIndex].soundOn ? "On" : "Off"), 1, 63, !inDaySelectionMode && currentState == 4, isEditing && currentState == 4);
+        drawMenuOption("Light:" + String(alarms[alarmIndex].lightOn ? "On" : "Off"), 84 - 15, 63, !inDaySelectionMode && currentState == 5, isEditing && currentState == 5);
+        drawBitmapOption(SCREEN_WIDTH - 30, 18, !inDaySelectionMode && currentState == 6, !inDaySelectionMode && isEditing && currentState == 6);
 
         display.display();
     };
@@ -758,7 +758,7 @@ void manageAlarms()
         if (inDaySelectionMode)
             currentState = (currentState + 1) % 7;
         else if (!isEditing)
-            currentState = (currentState + 5) % 6;
+            currentState = (currentState + 6) % 7;
         else
             updateAlarmValueUp();
         AlarmMenuUpdate = true;
@@ -769,7 +769,7 @@ void manageAlarms()
         if (inDaySelectionMode)
             currentState = (currentState + 6) % 7;
         else if (!isEditing)
-            currentState = (currentState + 1) % 6;
+            currentState = (currentState + 1) % 7;
         else
             updateAlarmValueDown();
         AlarmMenuUpdate = true;
@@ -829,6 +829,9 @@ void manageAlarms()
                 alarms[alarmIndex].soundOn = !alarms[alarmIndex].soundOn;
                 break;
             case 5:
+                alarms[alarmIndex].lightOn = !alarms[alarmIndex].lightOn;
+                break;
+            case 6:
                 deleteAlarmStatic(alarmIndex);
                 break;
             default:
@@ -891,8 +894,15 @@ void addNewAlarm()
     {
         if (!alarms[i].exists)
         {
-            alarms[i] = {true, false, 0, 0, 0, true}; // probably should do it instead of letting random data in there
-            alarms[i].exists = true;
+            alarms[i] = { // lets not have random data there
+                true,                                      // exists
+                false,                                      // enabled
+                {true, true, true, true, true, true, true}, // days
+                0,                                          // hours
+                0,                                          // minutes
+                true,                                       // soundOn
+                true                                        // lightOn
+            };
             Serial.println("New alarm added. " + String(i));
             data.currentSubmenu = alarmsSubmenu->entries;
             data.submenuCount = alarmsSubmenu->count;
@@ -1001,6 +1011,12 @@ void enableAlarmsIn()
     refreshAlarmsSubmenu();
 }
 
+void readAlarmsIn()
+{
+    readAlarms();
+    refreshAlarmsSubmenu();
+}
+
 void initMenus()
 {
     entryMenu *WeatherItems = new entryMenu[4]{
@@ -1039,13 +1055,14 @@ void initMenus()
     Submenu *debugSubmenu = new Submenu{"Debug", debugItems, 6, 6};
     entryMenu debugButton = {"Debug", nullptr, nullptr, debugSubmenu, &DejaVu_LGC_Sans_Bold_10};
 
-    entryMenu *manageAlarmsItems = new entryMenu[4]{
+    entryMenu *manageAlarmsItems = new entryMenu[5]{
         {"Save Alarms", saveAlarms, nullptr, nullptr, nullptr},
         {"Disable All Alarms", disableAlarmsIn, nullptr, nullptr, nullptr},
         {"Enable All Alarms", enableAlarmsIn, nullptr, nullptr, nullptr},
         {"Refresh Alarms", refreshAlarmsSubmenu, nullptr, nullptr, nullptr},
+        {"Alarms Flash Read", refreshAlarmsSubmenu, nullptr, nullptr, nullptr},
     };
-    Submenu *manageAlarmsSubmenu = new Submenu{"Alarm Ctrl", manageAlarmsItems, 4, 4};
+    Submenu *manageAlarmsSubmenu = new Submenu{"Alarm Ctrl", manageAlarmsItems, 5, 5};
 
     // Initialize alarm menu
     alarmsSubmenu = createAlarmsMenu();
@@ -1066,12 +1083,12 @@ void initMenus()
              4, "Main Menu", 1, 1);
     initAlarmMenus();
     xTaskCreatePinnedToCore(
-        menuTask,    // Task function
-        "Menu Task", // Task name
-        4096,        // Stack size in bytes
-        NULL,        // Task parameter
-        3,           // Task priority
-        &menuTaskHandle,        // Task handle
-        0            // Core number (0 or 1 for ESP32)
+        menuTask,        // Task function
+        "Menu Task",     // Task name
+        4096,            // Stack size in bytes
+        NULL,            // Task parameter
+        3,               // Task priority
+        &menuTaskHandle, // Task handle
+        0                // Core number (0 or 1 for ESP32)
     );
 }

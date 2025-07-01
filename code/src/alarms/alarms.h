@@ -20,6 +20,7 @@ struct Alarm {
     int hours;
     int minutes;
     bool soundOn;
+    bool lightOn;
 };
 
 extern bool ringing;

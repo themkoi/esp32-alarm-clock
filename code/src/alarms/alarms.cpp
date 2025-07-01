@@ -19,35 +19,44 @@ void initialzeAlarmArray()
 {
   for (int i = 0; i < MAX_ALARMS; i++)
   {
-    alarms[i] = {false, false, 0, 0, 0, true};
+    alarms[i] = {
+        // lets not have random data there
+        false,                                      // exists
+        false,                                      // enabled
+        {true, true, true, true, true, true, true}, // days
+        0,                                          // hours
+        0,                                          // minutes
+        true,                                       // soundOn
+        true                                        // lightOn
+    };
   }
 }
 
 void createAlarmTask()
 {
   xTaskCreatePinnedToCore(
-      checkAlarmsTask, // Function to implement the task
-      "Alarms",        // Task name
-      2048,           // Stack size (words)
-      NULL,            // Task input parameter
-      1,               // Priority (0 is lowest)
-      &alarmTaskHandle,            // Task handle
-      0                // Core to run the task on (0 or 1)
+      checkAlarmsTask,  // Function to implement the task
+      "Alarms",         // Task name
+      2048,             // Stack size (words)
+      NULL,             // Task input parameter
+      1,                // Priority (0 is lowest)
+      &alarmTaskHandle, // Task handle
+      0                 // Core to run the task on (0 or 1)
   );
 }
 
 void checkAlarms()
 {
-    int currentDay = weekday() - 1; // Adjust to 0-based index
-    Serial.println("current day:" + String(currentDay));
+  int currentDay = weekday() - 1; // Adjust to 0-based index
+  Serial.println("current day:" + String(currentDay));
 
-    for (int i = 0; i < MAX_ALARMS; ++i)
+  for (int i = 0; i < MAX_ALARMS; ++i)
+  {
+    if (alarms[i].days[currentDay] && alarms[i].enabled && alarms[i].exists)
     {
-        if (alarms[i].days[currentDay] && alarms[i].enabled && alarms[i].exists)
-        {
-            checkAlarm(i);
-        }
+      checkAlarm(i);
     }
+  }
 }
 
 void checkAlarmsTask(void *pvParameters)
@@ -71,15 +80,16 @@ void enableAllAlarms()
 {
   for (int i = 0; i < MAX_ALARMS; i++)
   {
-      alarms[i].enabled = true;
+    alarms[i].enabled = true;
   }
 }
 
-int lastRingingMinute = -1; 
-int lastRingingHour = -1;   
+int lastRingingMinute = -1;
+int lastRingingHour = -1;
 bool ringing = false;
 
 bool buzzerEnabled = false;
+bool lightCtrlEnabled = false;
 
 void checkAlarm(int index)
 {
@@ -91,6 +101,7 @@ void checkAlarm(int index)
   {
     Serial.print("Alarm! It's time to wake up on ");
     buzzerEnabled = alarms[index].soundOn;
+    lightCtrlEnabled = alarms[index].lightOn;
     createRiningingTask();
 
     lastRingingMinute = currentMinutes;
@@ -106,7 +117,7 @@ void createRiningingTask()
   xTaskCreatePinnedToCore(
       ringAlarm,   // Function to implement the task
       "ringAlarm", // Name of the task
-      2048,       // Stack size (words)
+      2048,        // Stack size (words)
       NULL,        // Parameter to pass
       2,           // Priority
       &Alarm,      // Task handle
@@ -118,25 +129,29 @@ static unsigned long alarmStartTime = 0;
 
 void touchStopAlarm(int hour, bool ringOn)
 {
+  bool lightOn = lightCtrlEnabled;
 
   if (readHallSwitch() == true || (millis() - alarmStartTime >= 30 * 60 * 1000))
   {
-    if (!(hour >= 11 && hour <= 21) || ringOn == false)
+    if ((!(hour >= 11 && hour <= 21) || ringOn == false) && lightOn == true)
     {
       Serial.println("stopping alarm");
-      vTaskDelay(pdMS_TO_TICKS(5 * 60 * 1000));
-      sendOffPostRequest();
+      if (lightCtrlEnabled && WiFi.status() == WL_CONNECTED)
+      {
+        vTaskDelay(pdMS_TO_TICKS(5 * 60 * 1000));
+        sendOffPostRequest();
+      }
     }
     ringing = false;
     vTaskDelete(Alarm);
   }
 }
 
-
 void ringAlarm(void *parameter)
 {
   unsigned long startTime = millis();
   bool ringOn = buzzerEnabled;
+  bool lightOn = lightCtrlEnabled;
 
   int currentHour = hour();
   int currentMinute = minute();
@@ -145,7 +160,7 @@ void ringAlarm(void *parameter)
   int alarmDurations[] = {8, 8, 8, 12, 12, 12, 8, 8};
   alarmStartTime = millis();
 
-  if (!(currentHour >= 11 && currentHour <= 21) || ringOn == false)
+  if ((!(currentHour >= 11 && currentHour <= 21) || ringOn == false) && lightOn == true)
   {
     sendOnPostRequest();
   }
@@ -183,7 +198,6 @@ void ringAlarm(void *parameter)
   }
 }
 
-
 void sendOnPostRequest()
 {
   if ((WiFi.status() == WL_CONNECTED))
@@ -193,7 +207,7 @@ void sendOnPostRequest()
 
       HTTPClient http;
 
-      http.begin(LIGHT_GATE);                               // Specify destination for HTTP request
+      http.begin(LIGHT_GATE);                             // Specify destination for HTTP request
       http.addHeader("Content-Type", "application/json"); // Specify content-type header
 
       int httpResponseCode = http.POST("{\"state\": \"ON\", \"transition\": 300}"); // Send the actual POST request
@@ -223,8 +237,8 @@ void sendOffPostRequest()
     {
       HTTPClient http;
 
-      http.begin(LIGHT_GATE); // Specify destination for HTTP request
-      http.addHeader("Content-Type", "application/json");           // Specify content-type header
+      http.begin(LIGHT_GATE);                             // Specify destination for HTTP request
+      http.addHeader("Content-Type", "application/json"); // Specify content-type header
 
       int httpResponseCode = http.POST("{\"state\": \"OFF\", \"transition\": 30}"); // Send the actual POST request
 
@@ -253,8 +267,8 @@ void sendTogglePostRequest()
     {
       HTTPClient http;
 
-      http.begin(LIGHT_GATE); // Specify destination for HTTP request
-      http.addHeader("Content-Type", "application/json");           // Specify content-type header
+      http.begin(LIGHT_GATE);                             // Specify destination for HTTP request
+      http.addHeader("Content-Type", "application/json"); // Specify content-type header
 
       int httpResponseCode = http.POST("{\"command\": \"toggle\"}"); // Send the actual POST request
 

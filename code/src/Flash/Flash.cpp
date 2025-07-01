@@ -14,6 +14,7 @@ void saveAlarms() {
         file.write((uint8_t *)&alarms[i].hours, sizeof(int16_t));
         file.write((uint8_t *)&alarms[i].minutes, sizeof(int16_t));
         file.write(alarms[i].soundOn);
+        file.write(alarms[i].lightOn);
 
         for (int d = 0; d < 7; d++) daysBuffer[d] = alarms[i].days[d] ? 1 : 0;
         file.write(daysBuffer, 7);
@@ -36,6 +37,7 @@ void readAlarms() {
         file.read((uint8_t *)&alarms[i].hours, sizeof(int16_t));
         file.read((uint8_t *)&alarms[i].minutes, sizeof(int16_t));
         alarms[i].soundOn = file.read();
+        alarms[i].lightOn = file.read();
 
         uint8_t daysBuffer[7];
         file.read(daysBuffer, 7);

@@ -114,7 +114,7 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 #define TOUCH_5_Seg_THRESHOLD_SLEEP 40
 
 // Menus
-#define LOOP_FUNCTION_TIMEOUT_MS 60000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
+#define LOOP_FUNCTION_TIMEOUT_MS 120000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
 #define MENU_TIMEOUT 20000 // How fast to go to main page without any input
 
 #define MAX_MENU_ITEMS 15 // Max menus change this too if you increase alarm number--  no doont think so ?
