@@ -127,7 +127,6 @@ void touchStopAlarm(int hour, bool ringOn)
       vTaskDelay(pdMS_TO_TICKS(5 * 60 * 1000));
       sendOffPostRequest();
     }
-    delay(60000);
     ringing = false;
     vTaskDelete(Alarm);
   }
@@ -156,10 +155,7 @@ void ringAlarm(void *parameter)
 
   while (true)
   {
-    int currentHour = hour();
-    int currentMinute = minute();
-
-    if ((millis() >= startTime || WiFi.SSID() != SSID1 || WiFi.status() != WL_CONNECTED || (currentHour >= 11 && currentHour <= 21)) && ringOn == true)
+    if ((millis() - startTime >= 15000 || WiFi.SSID() != SSID1 || WiFi.status() != WL_CONNECTED || (currentHour >= 11 && currentHour <= 21)) && ringOn == true)
     {
       Serial.println("ringin Alarm");
 
@@ -171,7 +167,6 @@ void ringAlarm(void *parameter)
 
         touchStopAlarm(currentHour, ringOn);
       }
-      vTaskDelay(100);
     }
 
     if (millis() - startTime >= 900000)
@@ -184,10 +179,6 @@ void ringAlarm(void *parameter)
     }
 
     touchStopAlarm(currentHour, ringOn);
-    Serial.print("help");
-    Serial.println(startTime);
-    Serial.println(millis());
-    Serial.println(ringOn);
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
