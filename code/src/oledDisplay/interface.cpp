@@ -324,7 +324,6 @@ void runLoopFunction(void (*loopFunction)())
         delay(10);
     }
 
-    showMenu();
 }
 
 void handleConfirm()
@@ -614,12 +613,21 @@ String getAlarmEntryName(int index)
     return name;
 }
 
+uint8_t alarmCurrentState = 0;
+bool isEditingAlarm = false;
+bool inDaySelectionMode = false;
+
+void initManageAlarm() {
+    alarmCurrentState = 0;
+    isEditingAlarm = false;
+    inDaySelectionMode = false;
+    inkButtonStates btn = useButton();
+}
+
 void manageAlarms()
 {
-    static uint8_t currentState = 0;
     uint8_t alarmIndex = alarmsSubmenu->entries[data.currentButton].text.toInt();
-    static bool isEditing = false;
-    static bool inDaySelectionMode = false;
+
     static unsigned long lastRepeatTime = 0;
     const unsigned long repeatInterval = 150;
     inkButtonStates btn = useButton();
@@ -686,7 +694,7 @@ void manageAlarms()
         labelWidth = 0;
         for (int i = 0; i < 7; i++)
         {
-            drawDaySelection(startX, y, alarms[alarmIndex].days[i], i, true, i == currentState);
+            drawDaySelection(startX, y, alarms[alarmIndex].days[i], i, true, i == alarmCurrentState);
             startX += labelWidth + 5;
         }
     };
@@ -703,8 +711,8 @@ void manageAlarms()
 
         display.setFont(&DejaVu_LGC_Sans_Bold_10);
         centerText(":", 25, 34);
-        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].hours), 17, 25, !inDaySelectionMode && currentState == 0, isEditing && currentState == 0);
-        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].minutes), 39, 25, !inDaySelectionMode && currentState == 1, isEditing && currentState == 1);
+        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].hours), 17, 25, !inDaySelectionMode && alarmCurrentState == 0, isEditingAlarm && alarmCurrentState == 0);
+        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].minutes), 39, 25, !inDaySelectionMode && alarmCurrentState == 1, isEditingAlarm && alarmCurrentState == 1);
 
         display.setFont(&DejaVu_LGC_Sans_Bold_9);
         if (inDaySelectionMode)
@@ -718,34 +726,34 @@ void manageAlarms()
                 drawDaySelection(startX, 51, alarms[alarmIndex].days[i], i, false, false);
                 startX += labelWidth + 5;
             }
-            if (currentState == 3)
+            if (alarmCurrentState == 3)
                 display.drawRect(0, 42 - 3, 125, 16, WHITE);
         }
 
         display.setTextColor(WHITE, BLACK);
         display.setFont(&DejaVu_LGC_Sans_Bold_10);
-        drawMenuOption("Enabled: " + String(alarms[alarmIndex].enabled ? "Yes" : "No"), 1, 37, !inDaySelectionMode && currentState == 2, isEditing && currentState == 2);
-        drawMenuOption("Sound:" + String(alarms[alarmIndex].soundOn ? "On" : "Off"), 1, 63, !inDaySelectionMode && currentState == 4, isEditing && currentState == 4);
-        drawMenuOption("Light:" + String(alarms[alarmIndex].lightOn ? "On" : "Off"), 84 - 15, 63, !inDaySelectionMode && currentState == 5, isEditing && currentState == 5);
-        drawBitmapOption(SCREEN_WIDTH - 30, 18, !inDaySelectionMode && currentState == 6, !inDaySelectionMode && isEditing && currentState == 6);
+        drawMenuOption("Enabled: " + String(alarms[alarmIndex].enabled ? "Yes" : "No"), 1, 37, !inDaySelectionMode && alarmCurrentState == 2, isEditingAlarm && alarmCurrentState == 2);
+        drawMenuOption("Sound:" + String(alarms[alarmIndex].soundOn ? "On" : "Off"), 1, 63, !inDaySelectionMode && alarmCurrentState == 4, isEditingAlarm && alarmCurrentState == 4);
+        drawMenuOption("Light:" + String(alarms[alarmIndex].lightOn ? "On" : "Off"), 84 - 15, 63, !inDaySelectionMode && alarmCurrentState == 5, isEditingAlarm && alarmCurrentState == 5);
+        drawBitmapOption(SCREEN_WIDTH - 30, 18, !inDaySelectionMode && alarmCurrentState == 6, !inDaySelectionMode && isEditingAlarm && alarmCurrentState == 6);
 
         display.display();
     };
 
     auto updateAlarmValueUp = [&]()
     {
-        if (currentState == 0)
+        if (alarmCurrentState == 0)
             alarms[alarmIndex].hours = (alarms[alarmIndex].hours + 1) % 24;
-        else if (currentState == 1)
+        else if (alarmCurrentState == 1)
             alarms[alarmIndex].minutes = (alarms[alarmIndex].minutes + 1) % 60;
         AlarmMenuUpdate = true;
     };
 
     auto updateAlarmValueDown = [&]()
     {
-        if (currentState == 0)
+        if (alarmCurrentState == 0)
             alarms[alarmIndex].hours = (alarms[alarmIndex].hours + 23) % 24;
-        else if (currentState == 1)
+        else if (alarmCurrentState == 1)
             alarms[alarmIndex].minutes = (alarms[alarmIndex].minutes + 59) % 60;
         AlarmMenuUpdate = true;
     };
@@ -756,9 +764,9 @@ void manageAlarms()
     {
     case Up:
         if (inDaySelectionMode)
-            currentState = (currentState + 1) % 7;
-        else if (!isEditing)
-            currentState = (currentState + 6) % 7;
+            alarmCurrentState = (alarmCurrentState + 1) % 7;
+        else if (!isEditingAlarm)
+            alarmCurrentState = (alarmCurrentState + 6) % 7;
         else
             updateAlarmValueUp();
         AlarmMenuUpdate = true;
@@ -767,16 +775,16 @@ void manageAlarms()
 
     case Down:
         if (inDaySelectionMode)
-            currentState = (currentState + 6) % 7;
-        else if (!isEditing)
-            currentState = (currentState + 1) % 7;
+            alarmCurrentState = (alarmCurrentState + 6) % 7;
+        else if (!isEditingAlarm)
+            alarmCurrentState = (alarmCurrentState + 1) % 7;
         else
             updateAlarmValueDown();
         AlarmMenuUpdate = true;
         lastRepeatTime = now;
         break;
     case LongDown:
-        if (isEditing)
+        if (isEditingAlarm)
         {
             while (digitalRead(DOWN_PIN) == LOW)
             {
@@ -794,7 +802,7 @@ void manageAlarms()
         }
         break;
     case LongUp:
-        if (isEditing)
+        if (isEditingAlarm)
         {
             while (digitalRead(UP_PIN) == LOW)
             {
@@ -813,17 +821,17 @@ void manageAlarms()
         break;
     case Menu:
         if (inDaySelectionMode)
-            alarms[alarmIndex].days[currentState] = !alarms[alarmIndex].days[currentState];
-        else if (!isEditing)
+            alarms[alarmIndex].days[alarmCurrentState] = !alarms[alarmIndex].days[alarmCurrentState];
+        else if (!isEditingAlarm)
         {
-            switch (currentState)
+            switch (alarmCurrentState)
             {
             case 2:
                 alarms[alarmIndex].enabled = !alarms[alarmIndex].enabled;
                 break;
             case 3:
                 inDaySelectionMode = true;
-                currentState = 0;
+                alarmCurrentState = 0;
                 break;
             case 4:
                 alarms[alarmIndex].soundOn = !alarms[alarmIndex].soundOn;
@@ -835,12 +843,12 @@ void manageAlarms()
                 deleteAlarmStatic(alarmIndex);
                 break;
             default:
-                isEditing = true;
+                isEditingAlarm = true;
                 break;
             }
         }
         else
-            isEditing = false;
+            isEditingAlarm = false;
         AlarmMenuUpdate = true;
         break;
 
@@ -848,10 +856,10 @@ void manageAlarms()
         if (inDaySelectionMode)
         {
             inDaySelectionMode = false;
-            currentState = 0;
+            alarmCurrentState = 0;
         }
-        else if (isEditing)
-            isEditing = false;
+        else if (isEditingAlarm)
+            isEditingAlarm = false;
         else
         {
             exitLoopFunction = true;
@@ -907,7 +915,7 @@ void addNewAlarm()
             data.currentSubmenu = alarmsSubmenu->entries;
             data.submenuCount = alarmsSubmenu->count;
 
-            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &font4pt7b);
+            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), initManageAlarm, manageAlarms, &font4pt7b);
 
             // alarmsSubmenu->name = menuName;
             data.submenuCount++;
@@ -945,7 +953,7 @@ void initAlarmMenus()
         {
             Serial.println("New alarm added. " + String(i));
 
-            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &font4pt7b);
+            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), initManageAlarm, manageAlarms, &font4pt7b);
 
             // alarmsSubmenu->name = menuName;
             delay(1);
@@ -987,7 +995,7 @@ void refreshAlarmsSubmenu()
         {
             if (alarms[i].exists)
             {
-                addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &font4pt7b);
+                addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), initManageAlarm, manageAlarms, &font4pt7b);
             }
         }
 
