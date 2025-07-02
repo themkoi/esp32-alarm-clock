@@ -89,9 +89,9 @@ void connectToWiFi(void *parameter)
 {
   WifiOn = true;
 
-  // Initialize wifiCredStatic array
   while (WifiOn)
   {
+    WiFi.mode(WIFI_STA);
     WiFi.setSleep(WIFI_PS_MAX_MODEM);
     WiFi.setAutoReconnect(true);
 
@@ -99,7 +99,7 @@ void connectToWiFi(void *parameter)
 
     esp_wifi_start();
 
-    if (!OTAEnabled && tasksLaunched == false)
+    if (readOtaValue() == false && tasksLaunched == false)
     {
       WiFi.onEvent(WiFiEvent);
     }

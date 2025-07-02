@@ -323,7 +323,7 @@ void runLoopFunction(void (*loopFunction)())
 
         delay(10);
     }
-
+    showMenu();
 }
 
 void handleConfirm()
@@ -657,7 +657,7 @@ void manageAlarms()
     {
         if (editing || selected)
         {
-            display.drawRect(x - 4, y - 4, 26, 26, WHITE);
+            display.drawRect(x - 2, y - 2, 22, 22, WHITE);
             display.drawBitmap(x, y, remove_18x18, 18, 18, WHITE);
         }
         else
@@ -677,12 +677,12 @@ void manageAlarms()
         display.print(dayLabel);
 
         if (selected && !buttonSelected)
-            display.drawRect(x - 2, y - 10, w + 4, 12, WHITE);
+            display.drawRect(x - 1, y - 10, w + 4, 12, WHITE);
         if (buttonSelected)
         {
-            display.fillRect(x - 2, y - 10, w + 4, 12, WHITE);
+            display.fillRect(x - 1, y - 10, w + 4, 12, WHITE);
             if (selected)
-                display.drawRect(x - 4, y - 12, w + 8, 16, WHITE);
+                display.drawRect(x - 3, y - 12, w + 8, 16, WHITE);
             display.setCursor(x, y);
             display.print(dayLabel);
         }
@@ -703,39 +703,39 @@ void manageAlarms()
     {
         display.clearDisplay();
         display.setTextColor(WHITE, BLACK);
-        display.setCursor(1, 10);
+        display.setCursor(1, 8);
         display.println("Alarm " + String(alarmIndex));
-        display.setFont(&DejaVu_LGC_Sans_Bold_8);
-        display.setCursor(65, 10);
+        display.setFont(&font4pt7b);
+        display.setCursor(70, 7);
         display.print("Today:" + getShortCurrentWeekdayName());
 
         display.setFont(&DejaVu_LGC_Sans_Bold_10);
-        centerText(":", 25, 34);
-        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].hours), 17, 25, !inDaySelectionMode && alarmCurrentState == 0, isEditingAlarm && alarmCurrentState == 0);
-        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].minutes), 39, 25, !inDaySelectionMode && alarmCurrentState == 1, isEditingAlarm && alarmCurrentState == 1);
+        centerText(":", 19, 34);
+        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].hours), 17, 19, !inDaySelectionMode && alarmCurrentState == 0, isEditingAlarm && alarmCurrentState == 0);
+        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].minutes), 39, 19, !inDaySelectionMode && alarmCurrentState == 1, isEditingAlarm && alarmCurrentState == 1);
 
         display.setFont(&DejaVu_LGC_Sans_Bold_9);
         if (inDaySelectionMode)
-            drawDaySelectionGroup(2, 51);
+            drawDaySelectionGroup(2, 46);
         else
         {
             int startX = 2;
             labelWidth = 0;
             for (int i = 0; i < 7; i++)
             {
-                drawDaySelection(startX, 51, alarms[alarmIndex].days[i], i, false, false);
+                drawDaySelection(startX, 46, alarms[alarmIndex].days[i], i, false, false);
                 startX += labelWidth + 5;
             }
             if (alarmCurrentState == 3)
-                display.drawRect(0, 42 - 3, 125, 16, WHITE);
+                display.drawRect(0, 34, SCREEN_WIDTH-1, 16, WHITE);
         }
 
         display.setTextColor(WHITE, BLACK);
         display.setFont(&DejaVu_LGC_Sans_Bold_10);
-        drawMenuOption("Enabled: " + String(alarms[alarmIndex].enabled ? "Yes" : "No"), 1, 37, !inDaySelectionMode && alarmCurrentState == 2, isEditingAlarm && alarmCurrentState == 2);
-        drawMenuOption("Sound:" + String(alarms[alarmIndex].soundOn ? "On" : "Off"), 1, 63, !inDaySelectionMode && alarmCurrentState == 4, isEditingAlarm && alarmCurrentState == 4);
-        drawMenuOption("Light:" + String(alarms[alarmIndex].lightOn ? "On" : "Off"), 84 - 15, 63, !inDaySelectionMode && alarmCurrentState == 5, isEditingAlarm && alarmCurrentState == 5);
-        drawBitmapOption(SCREEN_WIDTH - 30, 18, !inDaySelectionMode && alarmCurrentState == 6, !inDaySelectionMode && isEditingAlarm && alarmCurrentState == 6);
+        drawMenuOption("Enabled: " + String(alarms[alarmIndex].enabled ? "Yes" : "No"), 1, 32, !inDaySelectionMode && alarmCurrentState == 2, isEditingAlarm && alarmCurrentState == 2);
+        drawMenuOption("Sound:" + String(alarms[alarmIndex].soundOn ? "On" : "Off"), 1, 59, !inDaySelectionMode && alarmCurrentState == 4, isEditingAlarm && alarmCurrentState == 4);
+        drawMenuOption("Light:" + String(alarms[alarmIndex].lightOn ? "On" : "Off"), 84 - 15, 59, !inDaySelectionMode && alarmCurrentState == 5, isEditingAlarm && alarmCurrentState == 5);
+        drawBitmapOption(SCREEN_WIDTH - 30, 14, !inDaySelectionMode && alarmCurrentState == 6, !inDaySelectionMode && isEditingAlarm && alarmCurrentState == 6);
 
         display.display();
     };

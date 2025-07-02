@@ -28,8 +28,6 @@
 #include "../icons/icons/icons_32x32.h"
 #include "../icons/icons/icons_48x48.h"
 
-extern bool OTAEnabled;
-
 // Led Display
 #define CLK  18 
 #define DIO  19 
@@ -61,7 +59,7 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 
 #define DIMMING_INTERVAL 1000 // how often to update screen brightness
 
-#define DIM_DELAY 15000 // how long to have max brightness after input gets detected
+#define DIM_DELAY 30000 // how long to have max brightness after input gets detected
 
 #define LED_HYSTERESIS 2
 #define LED_MAX_BRIGHTNESS 100
@@ -115,9 +113,9 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 
 // Menus
 #define LOOP_FUNCTION_TIMEOUT_MS 120000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
-#define MENU_TIMEOUT 20000 // How fast to go to main page without any input
+#define MENU_TIMEOUT 60000 // How fast to go to main page without any input
 
-#define MAX_MENU_ITEMS 15 // Max menus change this too if you increase alarm number--  no doont think so ?
+#define MAX_MENU_ITEMS 30 // Max menus change this too if you increase alarm number-- yeah you have to or theres a panic so yay
 #define MAX_ALARMS 30 // Max number of alarms
 
 #define MAIN_PAGE_DURATION 60000
@@ -162,6 +160,7 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 #include "hardware/input/touch/touch.h"
 #include "functions.h"
 #include "WiFi/WiFi.h"
+#include "WiFi/ota.h"
 #include "NTP/NTP.h"
 #include "weather/weather.h"
 #include "LedDisplay/LedDisplay.h"

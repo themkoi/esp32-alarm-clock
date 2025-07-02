@@ -26,7 +26,7 @@ void createDimmingTask()
     xTaskCreatePinnedToCore(
         dimmingTask,        /* Task function. */
         "DimTask",          /* String with name of task. */
-        4096,              /* Stack size in words. */
+        4096,               /* Stack size in words. */
         NULL,               /* Parameter passed as input of the task */
         1,                  /* Priority of the task. */
         &dimmingTaskHandle, /* Task handle. */
@@ -34,13 +34,13 @@ void createDimmingTask()
     );
 
     xTaskCreatePinnedToCore(
-        oledWakeupTask, /* Task function. */
-        "InputOledTask",      /* String with name of task. */
-        2048,          /* Stack size in words. */
-        NULL,           /* Parameter passed as input of the task */
-        3,              /* Priority of the task. */
-        &oledWakeupTaskHandle,           /* Task handle. */
-        1               /* Core where the task should run. */
+        oledWakeupTask,        /* Task function. */
+        "InputOledTask",       /* String with name of task. */
+        2048,                  /* Stack size in words. */
+        NULL,                  /* Parameter passed as input of the task */
+        3,                     /* Priority of the task. */
+        &oledWakeupTaskHandle, /* Task handle. */
+        1                      /* Core where the task should run. */
     );
 }
 
@@ -85,7 +85,6 @@ void oledWakeupTask(void *pvParameters)
                     inputDetected = false;
                     lastActionTime = millis();
 
-
                     if (!manager.ScreenEnabled)
                     {
                         manager.sendOledAction(OLED_ENABLE);
@@ -100,9 +99,12 @@ void oledWakeupTask(void *pvParameters)
                     }
                 }
             }
-
-            dimOledDisplay();
+            if (WiFi.isConnected() && WiFi.SSID() == SSID1)
+            {
+                mmwaveState = getMmwaveState();
+            }
             lightLevel = getLightLevel();
+            dimOledDisplay();
         }
         else
         {
@@ -149,7 +151,7 @@ void dimmingTask(void *pvParameters)
             previousMillisLight = currentMillis;
         }
 
-        if (currentMillis - previousMillisState >= intervalState && WiFi.isConnected()&& WiFi.SSID() == SSID1)
+        if (currentMillis - previousMillisState >= intervalState && WiFi.isConnected() && WiFi.SSID() == SSID1)
         {
             mmwaveState = getMmwaveState();
             previousMillisState = currentMillis;
@@ -286,7 +288,6 @@ void dimLedDisplay()
     }
 }
 
-
 float getLightLevel()
 {
     float currentLightLevel = lightMeter.readBrightnessInLux(); // Read the current light level from BH1750 sensor
@@ -299,9 +300,9 @@ bool checkForNight()
     {
         time_t currentTime = now();
         int weekdayIndex = weekday(currentTime) - 1;
-    
+
         int currentHour = hour();
-    
+
         if ((alarms[weekdayIndex].hours == 0 && alarms[weekdayIndex].minutes == 0) && alarms[weekdayIndex].enabled == false)
         {
             if (currentHour >= 23 || currentHour < 10)
@@ -320,7 +321,9 @@ bool checkForNight()
             else
                 return false;
         }
-    } else {
+    }
+    else
+    {
         return !currentWeatherData.isDay;
     }
 }
@@ -369,7 +372,7 @@ int getMmwaveState()
         Serial.println("Detected");
         return 1;
     }
-    
+
     Serial.println("Not Detected");
     return 0;
 }
