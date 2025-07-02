@@ -127,16 +127,14 @@ void createRiningingTask()
 
 static unsigned long alarmStartTime = 0;
 
-void touchStopAlarm(int hour, bool ringOn)
+void touchStopAlarm(int hour, bool ringOn, bool lightOn)
 {
-  bool lightOn = lightCtrlEnabled;
-
   if (readHallSwitch() == true || (millis() - alarmStartTime >= 30 * 60 * 1000))
   {
     if ((!(hour >= 11 && hour <= 21) || ringOn == false) && lightOn == true)
     {
       Serial.println("stopping alarm");
-      if (lightCtrlEnabled && WiFi.status() == WL_CONNECTED)
+      if (lightOn && WiFi.status() == WL_CONNECTED)
       {
         vTaskDelay(pdMS_TO_TICKS(5 * 60 * 1000));
         sendOffPostRequest();
@@ -179,8 +177,6 @@ void ringAlarm(void *parameter)
         tone(BUZZER_PIN, alarmMelody[i], 1000 / alarmDurations[i]);
         delay(1000 / alarmDurations[i] * 1.30);
         noTone(BUZZER_PIN);
-
-        touchStopAlarm(currentHour, ringOn);
       }
     }
 
@@ -193,7 +189,7 @@ void ringAlarm(void *parameter)
       }
     }
 
-    touchStopAlarm(currentHour, ringOn);
+    touchStopAlarm(currentHour, ringOn, lightOn);
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }

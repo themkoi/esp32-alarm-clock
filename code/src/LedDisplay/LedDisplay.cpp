@@ -64,7 +64,6 @@ void showTimeTask(void *pvParameters)
       {
         int currentHour = hour();
         int currentMinute = minute();
-        Serial.println("uh max");
         LedDisplay.showNumberDecEx(currentHour * 100 + currentMinute, 0b11100000, true);
         vTaskDelay(1000);
       }
@@ -79,7 +78,6 @@ void showTimeTask(void *pvParameters)
       {
         int currentHour = hour();
         int currentMinute = minute();
-        Serial.println("uh max");
         LedDisplay.showNumberDecEx(currentHour * 100 + currentMinute, 0b11100000, true);
         vTaskDelay(1000);
       }
