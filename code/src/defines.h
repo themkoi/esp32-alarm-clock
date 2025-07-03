@@ -28,11 +28,21 @@
 #include "../icons/icons/icons_32x32.h"
 #include "../icons/icons/icons_48x48.h"
 
-extern bool OTAEnabled;
-
 // Led Display
 #define CLK  18 
 #define DIO  19 
+
+// WiFi
+#define SIZE_WIFI_CRED_STAT 3
+
+#define WIFI_SYNC_TIME 50000
+
+#define WIFI_COUNTRY_FIX 1 // Enable this to 1 to enable the fix
+/*
+Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA","CH","CN","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HK","HR","HU", "IE","IN","IS","IT","JP","KR","LI","LT","LU","LV","MT","MX","NL","NO","NZ","PL","PT", "RO","SE","SI","SK","TW","US"
+*/
+#define WIFI_COUNTRY_CODE "PL"
+#define WIFI_COUNTRY_FORCE false // This should be false, you can set it to true to check if something starts working
 
 // NTP
 //#define TIME_OFFSET_S 3600            // Time offset in seconds, use this as timezones
@@ -49,7 +59,7 @@ extern bool OTAEnabled;
 
 #define DIMMING_INTERVAL 1000 // how often to update screen brightness
 
-#define DIM_DELAY 15000 // how long to have max brightness after input gets detected
+#define DIM_DELAY 30000 // how long to have max brightness after input gets detected
 
 #define LED_HYSTERESIS 2
 #define LED_MAX_BRIGHTNESS 100
@@ -77,35 +87,35 @@ extern bool OTAEnabled;
 
 // Touch stuff I guess beh
 #define TOUCH_1_Seg_PIN GPIO_NUM_33
-#define TOUCH_1_Seg_THRESHOLD 23
+#define TOUCH_1_Seg_THRESHOLD 4
 #define TOUCH_2_Seg_PIN GPIO_NUM_4
-#define TOUCH_2_Seg_THRESHOLD 25
+#define TOUCH_2_Seg_THRESHOLD 4
 #define TOUCH_3_Seg_PIN GPIO_NUM_32
-#define TOUCH_3_Seg_THRESHOLD 25
+#define TOUCH_3_Seg_THRESHOLD 5
 #define TOUCH_4_Seg_PIN GPIO_NUM_27
-#define TOUCH_4_Seg_THRESHOLD 27
+#define TOUCH_4_Seg_THRESHOLD 5
 #define TOUCH_5_Seg_PIN GPIO_NUM_2
-#define TOUCH_5_Seg_THRESHOLD 33
+#define TOUCH_5_Seg_THRESHOLD 5
 
 // On battery
-#define TOUCH_1_Seg_THRESHOLD_BAT 28
-#define TOUCH_2_Seg_THRESHOLD_BAT 30
-#define TOUCH_3_Seg_THRESHOLD_BAT 32
-#define TOUCH_4_Seg_THRESHOLD_BAT 35
-#define TOUCH_5_Seg_THRESHOLD_BAT 40
+#define TOUCH_1_Seg_THRESHOLD_BAT 73
+#define TOUCH_2_Seg_THRESHOLD_BAT 77
+#define TOUCH_3_Seg_THRESHOLD_BAT 80
+#define TOUCH_4_Seg_THRESHOLD_BAT 85
+#define TOUCH_5_Seg_THRESHOLD_BAT 95
 
 // While Sleeping
-#define TOUCH_1_Seg_THRESHOLD_SLEEP 27
-#define TOUCH_2_Seg_THRESHOLD_SLEEP 28
-#define TOUCH_3_Seg_THRESHOLD_SLEEP 31
+#define TOUCH_1_Seg_THRESHOLD_SLEEP 72
+#define TOUCH_2_Seg_THRESHOLD_SLEEP 32
+#define TOUCH_3_Seg_THRESHOLD_SLEEP 33
 #define TOUCH_4_Seg_THRESHOLD_SLEEP 33
-#define TOUCH_5_Seg_THRESHOLD_SLEEP 36
+#define TOUCH_5_Seg_THRESHOLD_SLEEP 40
 
 // Menus
-#define LOOP_FUNCTION_TIMEOUT_MS 60000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
-#define MENU_TIMEOUT 20000 // How fast to go to main page without any input
+#define LOOP_FUNCTION_TIMEOUT_MS 120000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
+#define MENU_TIMEOUT 60000 // How fast to go to main page without any input
 
-#define MAX_MENU_ITEMS 15 // Max menus change this too if you increase alarm number--  no doont think so ?
+#define MAX_MENU_ITEMS 30 // Max menus change this too if you increase alarm number-- yeah you have to or theres a panic so yay
 #define MAX_ALARMS 30 // Max number of alarms
 
 #define MAIN_PAGE_DURATION 60000
@@ -131,13 +141,13 @@ extern bool OTAEnabled;
 #define BATT_TARGET_VOLTAGE 3.85   // Target voltage in volts
 #define BATT_HYSTERESIS 0.15       // charging Hysteresis in volts
 
-#define TIMER_WAKUP_TIME 5000 // How long it will stay awake after waking up from timer
+#define TIMER_WAKUP_TIME 500 // How long it will stay awake after waking up from timer
 #define GPIO_WAKUP_TIME 30000 // How long to stay awake after waking up from input
 #define SLEEPING_TIME 50 * 1000000 // In microseconds how long it will sleep for 
 
 // Charts
 #define CHART_READINGS 55 // Number of readings to keep
-#define INTERVAL_CHARTS 300000 // How often to read data for charts 
+#define INTERVAL_CHARTS 1570909 // How often to read data for charts 
 #define BOOL_STR(b) ((b) ? String("True") : String("False")) // dont touch
 
 #include "hardware/pitches.h"
@@ -150,6 +160,7 @@ extern bool OTAEnabled;
 #include "hardware/input/touch/touch.h"
 #include "functions.h"
 #include "WiFi/WiFi.h"
+#include "WiFi/ota.h"
 #include "NTP/NTP.h"
 #include "weather/weather.h"
 #include "LedDisplay/LedDisplay.h"

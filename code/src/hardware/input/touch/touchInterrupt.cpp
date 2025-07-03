@@ -83,4 +83,3 @@ void setTouchInterrupt(uint8_t pin, uint16_t threshold)
             break;
     }
 }
-

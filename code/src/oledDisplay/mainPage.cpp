@@ -64,10 +64,15 @@ void checkTouchButtons()
     }
 }
 
+static unsigned long lastHeldCheck = 0;
+const unsigned long debounceDelay = 50; // minimal debounce
+const unsigned long heldCheckInterval = 10;
+unsigned long lastCycle = 0;
+const unsigned long cycleInterneval = 1000;
+
 void showMainPage()
 {
-    const unsigned long debounceDelay = 50;
-
+    static unsigned long lastDebounceTime = 0;
     touchStates tState = useTouch();
 
     bool firstSeg = tState == First_Seg;
@@ -76,71 +81,66 @@ void showMainPage()
     bool fourthSeg = tState == Fourt_Seg;
     bool fifthSeg = tState == Fifth_Seg;
 
-    if ((firstSeg || secondSeg || thirdSeg || fourthSeg || fifthSeg) && isBeingHeld == false)
+    bool anySeg = firstSeg || secondSeg || thirdSeg || fourthSeg || fifthSeg;
+
+    if (anySeg && !isBeingHeld)
     {
-        lastFirstSeg = firstSeg;
-        lastSecondSeg = secondSeg;
-        lastThirdSeg = thirdSeg;
-        lastFourthSeg = fourthSeg;
-        lastFifthSeg = fifthSeg;
-
-        turnOffScreensaver();
-        cyclePagesUp();
-
-        if ((millis() - lastDebounceTime) > debounceDelay)
+        if (millis() - lastDebounceTime > debounceDelay)
         {
+            lastDebounceTime = millis();
+            lastFirstSeg = firstSeg;
+            lastSecondSeg = secondSeg;
+            lastThirdSeg = thirdSeg;
+            lastFourthSeg = fourthSeg;
+            lastFifthSeg = fifthSeg;
+
             debouncedTouchState = true;
             isBeingHeld = true;
+
+            turnOffScreensaver();
+            cyclePagesUp();
+            tone(BUZZER_PIN, NOTE_C7, 1000 / 16);
+            lastCycle = millis();
+
             Serial.println("Held");
         }
     }
 
     if (isBeingHeld)
     {
-        int touch1 = -1;
-        int touch2 = -1;
-        int touch3 = -1;
-        int touch4 = -1;
-        int touch5 = -1;
-
-        if (lastFirstSeg)
-            touch1 = touchRead(TOUCH_1_Seg_PIN);
-        if (lastSecondSeg)
-            touch2 = touchRead(TOUCH_2_Seg_PIN);
-        if (lastThirdSeg)
-            touch3 = touchRead(TOUCH_3_Seg_PIN);
-        if (lastFourthSeg)
-            touch4 = touchRead(TOUCH_4_Seg_PIN);
-        if (lastFifthSeg)
-            touch5 = touchRead(TOUCH_5_Seg_PIN);
-
-        bool touchCondition = false;
-
-        if (checkPower() == true)
+        if (millis() - lastHeldCheck >= heldCheckInterval)
         {
-            touchCondition = ((touch1 != -1 && touch1 < TOUCH_1_Seg_THRESHOLD) ||
-                              (touch2 != -1 && touch2 < TOUCH_2_Seg_THRESHOLD) ||
-                              (touch3 != -1 && touch3 < TOUCH_3_Seg_THRESHOLD) ||
-                              (touch4 != -1 && touch4 < TOUCH_4_Seg_THRESHOLD) ||
-                              (touch5 != -1 && touch5 < TOUCH_5_Seg_THRESHOLD));
-        }
-        else
-        {
-            touchCondition = ((touch1 != -1 && touch1 < TOUCH_1_Seg_THRESHOLD_BAT) ||
-                              (touch2 != -1 && touch2 < TOUCH_2_Seg_THRESHOLD_BAT) ||
-                              (touch3 != -1 && touch3 < TOUCH_3_Seg_THRESHOLD_BAT) ||
-                              (touch4 != -1 && touch4 < TOUCH_4_Seg_THRESHOLD_BAT) ||
-                              (touch5 != -1 && touch5 < TOUCH_5_Seg_THRESHOLD_BAT));
-        }
+            lastHeldCheck = millis();
 
-        if (!touchCondition)
-        {
-            if ((millis() - lastDebounceTime) > debounceDelay)
+            bool stillHeld = false;
+
+            if (lastFirstSeg)
+                stillHeld |= touchRead(TOUCH_1_Seg_PIN) < (powerConnected ? TOUCH_1_Seg_THRESHOLD : TOUCH_1_Seg_THRESHOLD_BAT);
+            if (lastSecondSeg)
+                stillHeld |= touchRead(TOUCH_2_Seg_PIN) < (powerConnected ? TOUCH_2_Seg_THRESHOLD : TOUCH_2_Seg_THRESHOLD_BAT);
+            if (lastThirdSeg)
+                stillHeld |= touchRead(TOUCH_3_Seg_PIN) < (powerConnected ? TOUCH_3_Seg_THRESHOLD : TOUCH_3_Seg_THRESHOLD_BAT);
+            if (lastFourthSeg)
+                stillHeld |= touchRead(TOUCH_4_Seg_PIN) < (powerConnected ? TOUCH_4_Seg_THRESHOLD : TOUCH_4_Seg_THRESHOLD_BAT);
+            if (lastFifthSeg)
+                stillHeld |= touchRead(TOUCH_5_Seg_PIN) < (powerConnected ? TOUCH_5_Seg_THRESHOLD : TOUCH_5_Seg_THRESHOLD_BAT);
+
+            if (!stillHeld)
             {
-                debouncedTouchState = false;
-                isBeingHeld = false;
-                Serial.println("Released");
+                if (millis() - lastDebounceTime > debounceDelay)
+                {
+                    debouncedTouchState = false;
+                    isBeingHeld = false;
+                    Serial.println("Released");
+                }
             }
+        }
+        if (millis() - lastCycle >= cycleInterneval)
+        {
+            tone(BUZZER_PIN, NOTE_C7, 1000 / 16);
+            lastCycle = millis();
+            turnOffScreensaver();
+            checkTouchButtons();
         }
     }
 
@@ -151,9 +151,7 @@ void showMainPage()
     }
 
     if (debouncedTouchState != previousInputState)
-    {
         lastDebounceTime = millis();
-    }
 
     previousInputState = debouncedTouchState;
 

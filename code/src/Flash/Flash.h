@@ -7,7 +7,7 @@ void readAlarms();
 
 void saveAlarms();
 
-void readOtaValue();
+bool readOtaValue();
 void saveOtaValue(bool Value);
 
 #endif

@@ -18,7 +18,7 @@ void createTimeTask()
   xTaskCreatePinnedToCore(
       syncTimeTask,   
       "SyncTimeTask", 
-      10000,          
+      2048,          
       NULL,           
       1,              
       &NTPTask,       

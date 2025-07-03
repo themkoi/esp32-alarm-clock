@@ -26,7 +26,7 @@ void createDimmingTask()
     xTaskCreatePinnedToCore(
         dimmingTask,        /* Task function. */
         "DimTask",          /* String with name of task. */
-        10000,              /* Stack size in words. */
+        4096,               /* Stack size in words. */
         NULL,               /* Parameter passed as input of the task */
         1,                  /* Priority of the task. */
         &dimmingTaskHandle, /* Task handle. */
@@ -34,13 +34,13 @@ void createDimmingTask()
     );
 
     xTaskCreatePinnedToCore(
-        oledWakeupTask, /* Task function. */
-        "DimTask",      /* String with name of task. */
-        10000,          /* Stack size in words. */
-        NULL,           /* Parameter passed as input of the task */
-        2,              /* Priority of the task. */
-        &oledWakeupTaskHandle,           /* Task handle. */
-        1               /* Core where the task should run. */
+        oledWakeupTask,        /* Task function. */
+        "InputOledTask",       /* String with name of task. */
+        2048,                  /* Stack size in words. */
+        NULL,                  /* Parameter passed as input of the task */
+        3,                     /* Priority of the task. */
+        &oledWakeupTaskHandle, /* Task handle. */
+        1                      /* Core where the task should run. */
     );
 }
 
@@ -54,7 +54,7 @@ void oledWakeupTask(void *pvParameters)
     unsigned long lastActionTime = 0;
     while (true)
     {
-        if (useAllButtons() != None || useAllTouch() != No_Seg)
+        if (useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true)
         {
             vTaskSuspend(dimmingTaskHandle);
             vTaskResume(LedTask);
@@ -72,6 +72,7 @@ void oledWakeupTask(void *pvParameters)
                 delay(5);
                 manager.sendOledAction(OLED_FADE_IN);
             }
+            inputDetected = false;
 
             vTaskDelay(pdMS_TO_TICKS(100));
 
@@ -79,14 +80,10 @@ void oledWakeupTask(void *pvParameters)
             {
                 vTaskDelay(pdMS_TO_TICKS(5));
 
-                if (useAllButtons() != None)
+                if (useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true)
                 {
+                    inputDetected = false;
                     lastActionTime = millis();
-
-                    if (manager.dimmed)
-                    {
-                        manager.sendOledAction(OLED_FADE_IN);
-                    }
 
                     if (!manager.ScreenEnabled)
                     {
@@ -95,16 +92,19 @@ void oledWakeupTask(void *pvParameters)
 
                     vTaskDelay(pdMS_TO_TICKS(5));
 
-                    if (useAllButtons() != None)
+                    if (useAllButtons() != None || useAllTouch() != No_Seg || inputDetected == true)
                     {
+                        inputDetected = false;
                         lastActionTime = millis();
                     }
                 }
             }
-
-            dimOledDisplay();
+            if (WiFi.isConnected() && WiFi.SSID() == SSID1)
+            {
+                mmwaveState = getMmwaveState();
+            }
             lightLevel = getLightLevel();
-            inputDetected = false;
+            dimOledDisplay();
         }
         else
         {
@@ -120,7 +120,7 @@ void oledWakeupTask(void *pvParameters)
 
 void dimmingTask(void *pvParameters)
 {
-    unsigned long intervalLight = 60000;
+    unsigned long previousMillisChart = 0;
     unsigned long previousMillisLight = 0;
 
     unsigned long previousMillisDimming = 0;
@@ -134,7 +134,7 @@ void dimmingTask(void *pvParameters)
         dimmingTaskRunning = true;
         unsigned long currentMillis = millis();
 
-        if (currentMillis - previousMillisLight >= INTERVAL_CHARTS)
+        if (currentMillis - previousMillisChart >= INTERVAL_CHARTS)
         {
             lightLevel = getLightLevel();
             for (int i = 0; i < CHART_READINGS - 1; i++)
@@ -142,22 +142,23 @@ void dimmingTask(void *pvParameters)
                 lightArray[i] = lightArray[i + 1];
             }
             lightArray[CHART_READINGS - 1] = lightLevel;
-            previousMillisLight = currentMillis;
+            previousMillisChart = currentMillis;
         }
-        else if (currentMillis - previousMillisLight >= intervalDimming)
+
+        if (currentMillis - previousMillisLight >= intervalDimming)
         {
             lightLevel = getLightLevel();
             previousMillisLight = currentMillis;
         }
 
-        if (currentMillis - previousMillisState >= intervalState && WiFi.isConnected() && powerConnected && WiFi.SSID() == SSID1)
+        if (currentMillis - previousMillisState >= intervalState && WiFi.isConnected() && WiFi.SSID() == SSID1)
         {
             mmwaveState = getMmwaveState();
             previousMillisState = currentMillis;
             delay(100);
         }
 
-        if (currentMillis - previousMillisDimming >= intervalDimming && powerConnected)
+        if (currentMillis - previousMillisDimming >= intervalDimming)
         {
             dimOledDisplay();
             maxBrightness = false;
@@ -194,8 +195,6 @@ void dimOledDisplay()
 {
     int currentHour = hour();
     int currentMinute = minute();
-    Serial.println("raw light level: " + String(lightLevel));
-    Serial.println("smoothened light level: " + String(lightLevel));
 
     if (shouldTurnOffDisplay(lightLevel) == true || (mmwaveState == 0 && WiFi.SSID() == SSID1 && mmwaveState != 3 && WiFi.isConnected() == true))
     {
@@ -249,17 +248,27 @@ int mapWithHysteresis(int lightLevel)
     return ledLastBrightness;
 }
 
+bool disableHysteresisState = false;
+
 void dimLedDisplay()
 {
     int currentHour = hour();
     int currentMinute = minute();
-    Serial.println("raw light level: " + String(getLightLevel()));
-    Serial.println("smoothened light level: " + String(lightLevel));
 
     if (lightLevel < 5000)
     {
+        if (disableHysteresisState)
+        {
+            if (lightLevel > LED_DISABLE_THRESHOLD + 3) // hysteresis upper limit
+                disableHysteresisState = false;
+        }
+        else
+        {
+            if (lightLevel <= LED_DISABLE_THRESHOLD - 3 && checkForNight())
+                disableHysteresisState = true;
+        }
 
-        if (lightLevel <= LED_DISABLE_THRESHOLD && (checkForNight() == true))
+        if (disableHysteresisState)
         {
             LedDisplay.clear();
             displayON = false;
@@ -287,28 +296,35 @@ float getLightLevel()
 
 bool checkForNight()
 {
-    time_t currentTime = now();
-    int weekdayIndex = weekday(currentTime) - 1;
-
-    int currentHour = hour();
-
-    if ((alarms[weekdayIndex].hours == 0 && alarms[weekdayIndex].minutes == 0) && alarms[weekdayIndex].enabled == false)
+    if (isWeatherAvailable == false)
     {
-        if (currentHour >= 23 || currentHour < 10)
+        time_t currentTime = now();
+        int weekdayIndex = weekday(currentTime) - 1;
+
+        int currentHour = hour();
+
+        if ((alarms[weekdayIndex].hours == 0 && alarms[weekdayIndex].minutes == 0) && alarms[weekdayIndex].enabled == false)
         {
-            return true;
+            if (currentHour >= 23 || currentHour < 10)
+            {
+                return true;
+            }
+            else
+                return false;
         }
         else
-            return false;
+        {
+            if (currentHour >= 23 || currentHour < alarms[weekdayIndex].hours)
+            {
+                return true;
+            }
+            else
+                return false;
+        }
     }
     else
     {
-        if (currentHour >= 23 || currentHour < alarms[weekdayIndex].hours)
-        {
-            return true;
-        }
-        else
-            return false;
+        return !currentWeatherData.isDay;
     }
 }
 
@@ -356,7 +372,7 @@ int getMmwaveState()
         Serial.println("Detected");
         return 1;
     }
-    
+
     Serial.println("Not Detected");
     return 0;
 }

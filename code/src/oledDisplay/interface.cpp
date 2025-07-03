@@ -3,6 +3,8 @@
 #define BUTTONS_OFFSET 1
 #define BUTTON_HEIGHT 10
 
+TaskHandle_t menuTaskHandle;
+
 struct entryMenu
 {
     String text;
@@ -45,7 +47,6 @@ Submenu *menuStack[MAX_STACK_SIZE];
 int stackPointer = -1;
 
 unsigned long lastInputTime = 0;
-bool startedLoop = false;
 
 bool menuRunning = true;
 
@@ -129,8 +130,6 @@ void showMenu()
         int16_t x1, y1;
         uint16_t textWidth, textHeight;
         display.getTextBounds(displayText, 0, 0, &x1, &y1, &textWidth, &textHeight);
-        Serial.println("width:" + String(textWidth));
-        Serial.println("height:" + String(textHeight));
 
         // Adjust for smaller fonts to ensure proper line height
         if (textHeight < 10)
@@ -324,55 +323,41 @@ void runLoopFunction(void (*loopFunction)())
 
         delay(10);
     }
-
     showMenu();
 }
 
 void handleConfirm()
 {
-    if (startedLoop == true)
+    if (data.isSubmenu && data.currentSubmenu != nullptr)
     {
-        if (data.isSubmenu && data.currentSubmenu != nullptr)
+        entryMenu selectedEntry = data.currentSubmenu[data.currentButton];
+
+        if (selectedEntry.function != nullptr)
         {
-            entryMenu selectedEntry = data.currentSubmenu[data.currentButton];
-
-            if (selectedEntry.function != nullptr)
-            {
-                selectedEntry.function();
-                delay(1);
-            }
-
-            if (selectedEntry.submenu != nullptr)
-            {
-                pushSubmenu(selectedEntry.submenu);
-                data.currentSubmenu = selectedEntry.submenu->entries;
-                data.submenuCount = selectedEntry.submenu->count;
-                data.menuName = selectedEntry.submenu->name;
-                data.isSubmenu = true;
-                data.currentButton = 0;
-                showMenu();
-            }
-            else if (selectedEntry.loopFunction != nullptr)
-            {
-                runLoopFunction(selectedEntry.loopFunction);
-            }
+            selectedEntry.function();
+            delay(1);
         }
-        else if (data.entryList[data.currentButton].function != nullptr)
+
+        if (selectedEntry.submenu != nullptr)
         {
-            data.entryList[data.currentButton].function();
-
-            if (data.entryList[data.currentButton].submenu != nullptr)
-            {
-                pushSubmenu(data.entryList[data.currentButton].submenu);
-                data.currentSubmenu = data.entryList[data.currentButton].submenu->entries;
-                data.submenuCount = data.entryList[data.currentButton].submenu->count;
-                data.menuName = data.entryList[data.currentButton].submenu->name;
-                data.isSubmenu = true;
-                data.currentButton = 0;
-                showMenu();
-            }
+            pushSubmenu(selectedEntry.submenu);
+            data.currentSubmenu = selectedEntry.submenu->entries;
+            data.submenuCount = selectedEntry.submenu->count;
+            data.menuName = selectedEntry.submenu->name;
+            data.isSubmenu = true;
+            data.currentButton = 0;
+            showMenu();
         }
-        else if (data.entryList[data.currentButton].submenu != nullptr)
+        else if (selectedEntry.loopFunction != nullptr)
+        {
+            runLoopFunction(selectedEntry.loopFunction);
+        }
+    }
+    else if (data.entryList[data.currentButton].function != nullptr)
+    {
+        data.entryList[data.currentButton].function();
+
+        if (data.entryList[data.currentButton].submenu != nullptr)
         {
             pushSubmenu(data.entryList[data.currentButton].submenu);
             data.currentSubmenu = data.entryList[data.currentButton].submenu->entries;
@@ -382,10 +367,20 @@ void handleConfirm()
             data.currentButton = 0;
             showMenu();
         }
-        else if (data.entryList[data.currentButton].loopFunction != nullptr)
-        {
-            runLoopFunction(data.entryList[data.currentButton].loopFunction);
-        }
+    }
+    else if (data.entryList[data.currentButton].submenu != nullptr)
+    {
+        pushSubmenu(data.entryList[data.currentButton].submenu);
+        data.currentSubmenu = data.entryList[data.currentButton].submenu->entries;
+        data.submenuCount = data.entryList[data.currentButton].submenu->count;
+        data.menuName = data.entryList[data.currentButton].submenu->name;
+        data.isSubmenu = true;
+        data.currentButton = 0;
+        showMenu();
+    }
+    else if (data.entryList[data.currentButton].loopFunction != nullptr)
+    {
+        runLoopFunction(data.entryList[data.currentButton].loopFunction);
     }
 }
 
@@ -618,12 +613,21 @@ String getAlarmEntryName(int index)
     return name;
 }
 
+uint8_t alarmCurrentState = 0;
+bool isEditingAlarm = false;
+bool inDaySelectionMode = false;
+
+void initManageAlarm() {
+    alarmCurrentState = 0;
+    isEditingAlarm = false;
+    inDaySelectionMode = false;
+    inkButtonStates btn = useButton();
+}
+
 void manageAlarms()
 {
-    static uint8_t currentState = 0;
     uint8_t alarmIndex = alarmsSubmenu->entries[data.currentButton].text.toInt();
-    static bool isEditing = false;
-    static bool inDaySelectionMode = false;
+
     static unsigned long lastRepeatTime = 0;
     const unsigned long repeatInterval = 150;
     inkButtonStates btn = useButton();
@@ -653,7 +657,7 @@ void manageAlarms()
     {
         if (editing || selected)
         {
-            display.drawRect(x - 4, y - 4, 26, 26, WHITE);
+            display.drawRect(x - 2, y - 2, 22, 22, WHITE);
             display.drawBitmap(x, y, remove_18x18, 18, 18, WHITE);
         }
         else
@@ -673,12 +677,12 @@ void manageAlarms()
         display.print(dayLabel);
 
         if (selected && !buttonSelected)
-            display.drawRect(x - 2, y - 10, w + 4, 12, WHITE);
+            display.drawRect(x - 1, y - 10, w + 4, 12, WHITE);
         if (buttonSelected)
         {
-            display.fillRect(x - 2, y - 10, w + 4, 12, WHITE);
+            display.fillRect(x - 1, y - 10, w + 4, 12, WHITE);
             if (selected)
-                display.drawRect(x - 4, y - 12, w + 8, 16, WHITE);
+                display.drawRect(x - 3, y - 12, w + 8, 16, WHITE);
             display.setCursor(x, y);
             display.print(dayLabel);
         }
@@ -690,7 +694,7 @@ void manageAlarms()
         labelWidth = 0;
         for (int i = 0; i < 7; i++)
         {
-            drawDaySelection(startX, y, alarms[alarmIndex].days[i], i, true, i == currentState);
+            drawDaySelection(startX, y, alarms[alarmIndex].days[i], i, true, i == alarmCurrentState);
             startX += labelWidth + 5;
         }
     };
@@ -699,56 +703,57 @@ void manageAlarms()
     {
         display.clearDisplay();
         display.setTextColor(WHITE, BLACK);
-        display.setCursor(1, 10);
+        display.setCursor(1, 8);
         display.println("Alarm " + String(alarmIndex));
-        display.setFont(&DejaVu_LGC_Sans_Bold_8);
-        display.setCursor(65, 10);
+        display.setFont(&font4pt7b);
+        display.setCursor(70, 7);
         display.print("Today:" + getShortCurrentWeekdayName());
 
         display.setFont(&DejaVu_LGC_Sans_Bold_10);
-        centerText(":", 25, 34);
-        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].hours), 17, 25, !inDaySelectionMode && currentState == 0, isEditing && currentState == 0);
-        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].minutes), 39, 25, !inDaySelectionMode && currentState == 1, isEditing && currentState == 1);
+        centerText(":", 19, 34);
+        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].hours), 17, 19, !inDaySelectionMode && alarmCurrentState == 0, isEditingAlarm && alarmCurrentState == 0);
+        drawMenuOption(formatWithLeadingZero(alarms[alarmIndex].minutes), 39, 19, !inDaySelectionMode && alarmCurrentState == 1, isEditingAlarm && alarmCurrentState == 1);
 
         display.setFont(&DejaVu_LGC_Sans_Bold_9);
         if (inDaySelectionMode)
-            drawDaySelectionGroup(2, 53);
+            drawDaySelectionGroup(2, 46);
         else
         {
             int startX = 2;
             labelWidth = 0;
             for (int i = 0; i < 7; i++)
             {
-                drawDaySelection(startX, 53, alarms[alarmIndex].days[i], i, false, false);
+                drawDaySelection(startX, 46, alarms[alarmIndex].days[i], i, false, false);
                 startX += labelWidth + 5;
             }
-            if (currentState == 3)
-                display.drawRect(0, 45, 125, 14, WHITE);
+            if (alarmCurrentState == 3)
+                display.drawRect(0, 34, SCREEN_WIDTH-1, 16, WHITE);
         }
 
         display.setTextColor(WHITE, BLACK);
         display.setFont(&DejaVu_LGC_Sans_Bold_10);
-        drawMenuOption("Enabled: " + String(alarms[alarmIndex].enabled ? "Yes" : "No"), 1, 37, !inDaySelectionMode && currentState == 2, isEditing && currentState == 2);
-        drawMenuOption("Sound: " + String(alarms[alarmIndex].soundOn ? "On" : "Off"), 1, 63, !inDaySelectionMode && currentState == 4, isEditing && currentState == 4);
-        drawBitmapOption(SCREEN_WIDTH - 30, 20, !inDaySelectionMode && currentState == 5, !inDaySelectionMode && isEditing && currentState == 5);
+        drawMenuOption("Enabled: " + String(alarms[alarmIndex].enabled ? "Yes" : "No"), 1, 32, !inDaySelectionMode && alarmCurrentState == 2, isEditingAlarm && alarmCurrentState == 2);
+        drawMenuOption("Sound:" + String(alarms[alarmIndex].soundOn ? "On" : "Off"), 1, 59, !inDaySelectionMode && alarmCurrentState == 4, isEditingAlarm && alarmCurrentState == 4);
+        drawMenuOption("Light:" + String(alarms[alarmIndex].lightOn ? "On" : "Off"), 84 - 15, 59, !inDaySelectionMode && alarmCurrentState == 5, isEditingAlarm && alarmCurrentState == 5);
+        drawBitmapOption(SCREEN_WIDTH - 30, 14, !inDaySelectionMode && alarmCurrentState == 6, !inDaySelectionMode && isEditingAlarm && alarmCurrentState == 6);
 
         display.display();
     };
 
     auto updateAlarmValueUp = [&]()
     {
-        if (currentState == 0)
+        if (alarmCurrentState == 0)
             alarms[alarmIndex].hours = (alarms[alarmIndex].hours + 1) % 24;
-        else if (currentState == 1)
+        else if (alarmCurrentState == 1)
             alarms[alarmIndex].minutes = (alarms[alarmIndex].minutes + 1) % 60;
         AlarmMenuUpdate = true;
     };
 
     auto updateAlarmValueDown = [&]()
     {
-        if (currentState == 0)
+        if (alarmCurrentState == 0)
             alarms[alarmIndex].hours = (alarms[alarmIndex].hours + 23) % 24;
-        else if (currentState == 1)
+        else if (alarmCurrentState == 1)
             alarms[alarmIndex].minutes = (alarms[alarmIndex].minutes + 59) % 60;
         AlarmMenuUpdate = true;
     };
@@ -759,9 +764,9 @@ void manageAlarms()
     {
     case Up:
         if (inDaySelectionMode)
-            currentState = (currentState + 1) % 7;
-        else if (!isEditing)
-            currentState = (currentState + 5) % 6;
+            alarmCurrentState = (alarmCurrentState + 1) % 7;
+        else if (!isEditingAlarm)
+            alarmCurrentState = (alarmCurrentState + 6) % 7;
         else
             updateAlarmValueUp();
         AlarmMenuUpdate = true;
@@ -770,42 +775,80 @@ void manageAlarms()
 
     case Down:
         if (inDaySelectionMode)
-            currentState = (currentState + 6) % 7;
-        else if (!isEditing)
-            currentState = (currentState + 1) % 6;
+            alarmCurrentState = (alarmCurrentState + 6) % 7;
+        else if (!isEditingAlarm)
+            alarmCurrentState = (alarmCurrentState + 1) % 7;
         else
             updateAlarmValueDown();
         AlarmMenuUpdate = true;
         lastRepeatTime = now;
         break;
-
+    case LongDown:
+        if (isEditingAlarm)
+        {
+            while (digitalRead(DOWN_PIN) == LOW)
+            {
+                if ((millis() - lastRepeatTime > 200))
+                {
+                    updateAlarmValueDown();
+                    if (AlarmMenuUpdate)
+                    {
+                        AlarmMenuUpdate = false;
+                        redrawDisplay();
+                    }
+                    lastRepeatTime = millis();
+                }
+            }
+        }
+        break;
+    case LongUp:
+        if (isEditingAlarm)
+        {
+            while (digitalRead(UP_PIN) == LOW)
+            {
+                if ((millis() - lastRepeatTime > 200))
+                {
+                    updateAlarmValueUp();
+                    if (AlarmMenuUpdate)
+                    {
+                        AlarmMenuUpdate = false;
+                        redrawDisplay();
+                    }
+                    lastRepeatTime = millis();
+                }
+            }
+        }
+        break;
     case Menu:
         if (inDaySelectionMode)
-            alarms[alarmIndex].days[currentState] = !alarms[alarmIndex].days[currentState];
-        else if (!isEditing)
+            alarms[alarmIndex].days[alarmCurrentState] = !alarms[alarmIndex].days[alarmCurrentState];
+        else if (!isEditingAlarm)
         {
-            switch (currentState)
+            switch (alarmCurrentState)
             {
             case 2:
                 alarms[alarmIndex].enabled = !alarms[alarmIndex].enabled;
                 break;
             case 3:
                 inDaySelectionMode = true;
-                currentState = 0;
+                alarmCurrentState = 0;
                 break;
             case 4:
                 alarms[alarmIndex].soundOn = !alarms[alarmIndex].soundOn;
                 break;
             case 5:
+                alarms[alarmIndex].lightOn = !alarms[alarmIndex].lightOn;
+                break;
+            case 6:
                 deleteAlarmStatic(alarmIndex);
                 break;
             default:
-                isEditing = true;
+                isEditingAlarm = true;
                 break;
             }
         }
         else
-            isEditing = false;
+            isEditingAlarm = false;
         AlarmMenuUpdate = true;
         break;
 
@@ -813,10 +856,10 @@ void manageAlarms()
         if (inDaySelectionMode)
         {
             inDaySelectionMode = false;
-            currentState = 0;
+            alarmCurrentState = 0;
         }
-        else if (isEditing)
-            isEditing = false;
+        else if (isEditingAlarm)
+            isEditingAlarm = false;
         else
         {
             exitLoopFunction = true;
@@ -829,27 +872,13 @@ void manageAlarms()
         break;
     }
 
-    if (isEditing)
-    {
-        if (digitalRead(UP_PIN) == LOW && (now - lastRepeatTime > 150))
-        {
-            updateAlarmValueUp();
-            lastRepeatTime = now;
-        }
-        if (digitalRead(DOWN_PIN) == LOW && (now - lastRepeatTime > 150))
-        {
-            updateAlarmValueDown();
-            lastRepeatTime = now;
-        }
-    }
-
     if (AlarmMenuUpdate)
     {
         AlarmMenuUpdate = false;
         redrawDisplay();
     }
 
-    if (shouldExitLoop())
+    if (shouldExitLoop() && data.currentButton != 0)
     {
         AlarmMenuUpdate = true;
         exitLoopFunction = true;
@@ -873,13 +902,20 @@ void addNewAlarm()
     {
         if (!alarms[i].exists)
         {
-            alarms[i] = {true, false, 0, 0, 0, true}; // probably should do it instead of letting random data in there
-            alarms[i].exists = true;
+            alarms[i] = { // lets not have random data there
+                true,                                      // exists
+                false,                                      // enabled
+                {true, true, true, true, true, true, true}, // days
+                0,                                          // hours
+                0,                                          // minutes
+                true,                                       // soundOn
+                true                                        // lightOn
+            };
             Serial.println("New alarm added. " + String(i));
             data.currentSubmenu = alarmsSubmenu->entries;
             data.submenuCount = alarmsSubmenu->count;
 
-            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &font4pt7b);
+            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), initManageAlarm, manageAlarms, &font4pt7b);
 
             // alarmsSubmenu->name = menuName;
             data.submenuCount++;
@@ -917,7 +953,7 @@ void initAlarmMenus()
         {
             Serial.println("New alarm added. " + String(i));
 
-            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), nullptr, manageAlarms, &font4pt7b);
+            addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), initManageAlarm, manageAlarms, &font4pt7b);
 
             // alarmsSubmenu->name = menuName;
             delay(1);
@@ -939,15 +975,54 @@ void handleMenus()
 
 void menuTask(void *parameter)
 {
-    startedLoop = true;
     while (true)
     {
-        if (goToSleep == false)
-        {
-            handleMenus();
-        }
-        vTaskDelay(10); // Adjust delay as needed
+        handleMenus();
+        vTaskDelay(10);
     }
+}
+
+void refreshAlarmsSubmenu()
+{
+    if (alarmsSubmenu)
+    {
+        memset(alarmsSubmenu->entries, 0, sizeof(entryMenu) * alarmsSubmenu->maxMenus);
+        alarmsSubmenu->count = 0;
+
+        addEntryToSubmenu(alarmsSubmenu, "Add New Alarm", addNewAlarm, nullptr, &DejaVu_LGC_Sans_Bold_10);
+
+        for (int i = 0; i < MAX_ALARMS; ++i)
+        {
+            if (alarms[i].exists)
+            {
+                addEntryToSubmenu(alarmsSubmenu, getAlarmEntryName(i), initManageAlarm, manageAlarms, &font4pt7b);
+            }
+        }
+
+        if (data.isSubmenu && data.currentSubmenu == alarmsSubmenu->entries)
+        {
+            data.submenuCount = alarmsSubmenu->count;
+            showMenu();
+        }
+    }
+}
+
+void disableAlarmsIn()
+{
+    disableAllAlarms();
+    refreshAlarmsSubmenu();
+}
+
+void enableAlarmsIn()
+{
+    enableAllAlarms();
+    refreshAlarmsSubmenu();
+}
+
+void readAlarmsIn()
+{
+    readAlarms();
+    refreshAlarmsSubmenu();
 }
 
 void initMenus()
@@ -988,10 +1063,14 @@ void initMenus()
     Submenu *debugSubmenu = new Submenu{"Debug", debugItems, 6, 6};
     entryMenu debugButton = {"Debug", nullptr, nullptr, debugSubmenu, &DejaVu_LGC_Sans_Bold_10};
 
-    entryMenu *manageAlarmsItems = new entryMenu[1]{
+    entryMenu *manageAlarmsItems = new entryMenu[5]{
         {"Save Alarms", saveAlarms, nullptr, nullptr, nullptr},
+        {"Disable All Alarms", disableAlarmsIn, nullptr, nullptr, nullptr},
+        {"Enable All Alarms", enableAlarmsIn, nullptr, nullptr, nullptr},
+        {"Refresh Alarms", refreshAlarmsSubmenu, nullptr, nullptr, nullptr},
+        {"Alarms Flash Read", refreshAlarmsSubmenu, nullptr, nullptr, nullptr},
     };
-    Submenu *manageAlarmsSubmenu = new Submenu{"Alarm Ctrl", manageAlarmsItems, 1, 1};
+    Submenu *manageAlarmsSubmenu = new Submenu{"Alarm Ctrl", manageAlarmsItems, 5, 5};
 
     // Initialize alarm menu
     alarmsSubmenu = createAlarmsMenu();
@@ -999,8 +1078,8 @@ void initMenus()
         {"Alarms", nullptr, nullptr, alarmsSubmenu, nullptr},
         {"Alarm Ctrl", nullptr, nullptr, manageAlarmsSubmenu, nullptr},
     };
-    Submenu *alarmsSubmenu = new Submenu{"Alarms", alarmsItems, 2, 2};
-    entryMenu alarmsButton = {"Alarms", nullptr, nullptr, alarmsSubmenu, &DejaVu_LGC_Sans_Bold_10};
+    Submenu *alarmsMain = new Submenu{"Alarms", alarmsItems, 2, 2};
+    entryMenu alarmsButton = {"Alarms", nullptr, nullptr, alarmsMain, &DejaVu_LGC_Sans_Bold_10};
 
     // Initialize the main menu
     initMenu(new entryMenu[4]{
@@ -1012,12 +1091,12 @@ void initMenus()
              4, "Main Menu", 1, 1);
     initAlarmMenus();
     xTaskCreatePinnedToCore(
-        menuTask,    // Task function
-        "Menu Task", // Task name
-        4096,        // Stack size in bytes
-        NULL,        // Task parameter
-        3,           // Task priority
-        NULL,        // Task handle
-        0            // Core number (0 or 1 for ESP32)
+        menuTask,        // Task function
+        "Menu Task",     // Task name
+        4096,            // Stack size in bytes
+        NULL,            // Task parameter
+        3,               // Task priority
+        &menuTaskHandle, // Task handle
+        0                // Core number (0 or 1 for ESP32)
     );
 }

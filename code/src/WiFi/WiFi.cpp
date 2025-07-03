@@ -35,18 +35,7 @@ void initWifi()
       0);
 }
 
-#define SIZE_WIFI_CRED_STAT 3
-
-WiFiCred *wifiCredStatic[3];
-
-#define WIFI_SYNC_TIME 50000
-
-#define WIFI_COUNTRY_FIX 1 // Enable this to 1 to enable the fix
-/*
-Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA","CH","CN","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HK","HR","HU", "IE","IN","IS","IT","JP","KR","LI","LT","LU","LV","MT","MX","NL","NO","NZ","PL","PT", "RO","SE","SI","SK","TW","US"
-*/
-#define WIFI_COUNTRY_CODE "PL"
-#define WIFI_COUNTRY_FORCE false // This should be false, you can set it to true to check if something starts working
+WiFiCred *wifiCredStatic[SIZE_WIFI_CRED_STAT];
 
 void setWifiCountryCode()
 {
@@ -100,9 +89,9 @@ void connectToWiFi(void *parameter)
 {
   WifiOn = true;
 
-  // Initialize wifiCredStatic array
   while (WifiOn)
   {
+    WiFi.mode(WIFI_STA);
     WiFi.setSleep(WIFI_PS_MAX_MODEM);
     WiFi.setAutoReconnect(true);
 
@@ -110,7 +99,7 @@ void connectToWiFi(void *parameter)
 
     esp_wifi_start();
 
-    if (!OTAEnabled && tasksLaunched == false)
+    if (readOtaValue() == false && tasksLaunched == false)
     {
       WiFi.onEvent(WiFiEvent);
     }
@@ -153,7 +142,7 @@ void createWifiTask()
   xTaskCreatePinnedToCore(
       connectToWiFi, // Task function
       "WiFiTask",    // Task name
-      10000,         // Stack size
+      4096,         // Stack size
       NULL,          // Task parameters
       10,            // Priority
       &wifiTask,     // Task handle

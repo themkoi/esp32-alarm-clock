@@ -12,21 +12,23 @@ void initBuzzer();
 void initButtons();
 void initTempSensor();
 void initTouch();
+void mountLittlefs();
 
 void initHardware()
 {
-  setCpuFrequencyMhz(80); // stable 160,80,240
+  Serial.begin(115200);
+  Serial.println("Initializing Hardware");
+  setCpuFrequencyMhz(80); // stable 160,80,240 needs to be 80 for wifi
   esp_pm_config_t pm_config = {
       .max_freq_mhz = 80,
       .min_freq_mhz = 10,
       .light_sleep_enable = true,
   };
   esp_pm_configure(&pm_config);
-  delay(2000);
   pinMode(VOLTAGE_DIVIDER_PIN, INPUT);
   pinMode(POWER_STATE_PIN, INPUT);
-  pinMode(CHARGER_CONTROL_PIN, OUTPUT);
   pinMode(HALL_SWITCH, INPUT);
+  pinMode(CHARGER_CONTROL_PIN, OUTPUT);
   initButtons();
   initTouch();
   initBuzzer();
@@ -34,6 +36,29 @@ void initHardware()
   initLedDisplay();
   initLightSensor();
   initTempSensor();
+  syncTimeLibWithRTC();
+  mountLittlefs();
+  Serial.println("Hardware initialized");
+}
+
+void mountLittlefs()
+{
+  if (!LittleFS.begin())
+  {
+    Serial.println("LittleFS mount failed, formatting...");
+    if (!LittleFS.format())
+    {
+      Serial.println("LittleFS format failed");
+    }
+    if (!LittleFS.begin())
+    {
+      Serial.println("LittleFS mount failed after format continue and see what happens :3");
+    }
+  }
+  else
+  {
+    Serial.println("LittleFS mounted successfully");
+  }
 }
 
 bool readHallSwitch()
@@ -80,11 +105,12 @@ void initLightSensor()
   lightMeter.configureMeasurement(0x00, 0x02);
 }
 
-void initTouch() {
-  touchSetCycles(0x2000, 0x2000);
+void initTouch()
+{
+  touchSetCycles(0x500, 0x500);
   turnOnTouch();
 }
- 
+
 void initButtons()
 {
   pinMode(UP_PIN, INPUT_PULLUP);
@@ -121,8 +147,6 @@ void initTempSensor()
   if (!sht4.begin())
   {
     Serial.println("Couldn't find SHT4x");
-    while (1)
-      delay(1);
   }
   Serial.println("Found SHT4x sensor");
   Serial.print("Serial number 0x");
