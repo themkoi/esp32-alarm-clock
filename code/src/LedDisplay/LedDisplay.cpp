@@ -16,7 +16,7 @@ void createLedDisplayTask()
   xTaskCreatePinnedToCore(
       showTimeTask, /* Task function. */
       "LedTask",    /* String with name of task. */
-      2048,        /* Stack size in words. */
+      2048,         /* Stack size in words. */
       NULL,         /* Parameter passed as input of the task */
       1,            /* Priority of the task. */
       &LedTask,     /* Task handle. */
@@ -42,7 +42,7 @@ void showTimeTask(void *pvParameters)
 
         Serial.println("Reading brightness and dimming Led display accordingly");
 
-          dimLedDisplay();
+        dimLedDisplay();
 
         if (displayON == true)
         {
@@ -82,6 +82,8 @@ void showTimeTask(void *pvParameters)
         vTaskDelay(1000);
       }
       dimLedDisplay();
+      int currentHour = hour();
+      int currentMinute = minute();
       LedDisplay.showNumberDecEx(currentHour * 100 + currentMinute, 0b11100000, true);
     }
   }

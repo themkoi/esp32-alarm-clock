@@ -17,14 +17,14 @@ float readHumidity()
     return humidity.relative_humidity;
 }
 
-unsigned long previousMillisTemp = 0;     // Will store the last time the function was called
 
-void setTemperature(void *pvParameters)
+void tempTask(void *pvParameters)
 {
+    unsigned long previousMillisChart = 0;     // Will store the last time the function was called
     while (true)
     {
         unsigned long currentMillis = millis(); // Get the current time
-        if (currentMillis - previousMillisTemp >= INTERVAL_CHARTS)
+        if (currentMillis - previousMillisChart >= INTERVAL_CHARTS)
         {
             // Shift temperature readings
             for (int i = 0; i < CHART_READINGS - 1; i++)
@@ -36,9 +36,9 @@ void setTemperature(void *pvParameters)
             // Add new readings to the end of the arrays
             temperatureArray[CHART_READINGS - 1] = readTemperature();
             humidityArray[CHART_READINGS - 1] = readHumidity();
-            previousMillisTemp = currentMillis;
+            previousMillisChart = currentMillis;
         }
-        vTaskDelay(1000);
+        vTaskDelay(pdMS_TO_TICKS(600000));
     }
 }
 
@@ -53,7 +53,7 @@ void createTempTask()
     }
 
     xTaskCreatePinnedToCore(
-        setTemperature, /* Task function */
+        tempTask, /* Task function */
         "TempTask",     /* String with name of task */
         2048,          /* Stack size in words */
         NULL,           /* Parameter passed as input of the task */

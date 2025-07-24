@@ -20,6 +20,7 @@ struct Submenu
     entryMenu *entries;
     int count;
     int maxMenus;
+    int lastSelectedIndex = 0; // Add this to track last selected entry in this submenu
 };
 
 // Global menu data
@@ -39,7 +40,7 @@ struct menuData
 
 menuData data = {};
 int currentMenuItem = 0;
-int pageNumber = 0;
+int mainMenuLastSelectedIndex = 0;
 int currentPage = 0;
 
 #define MAX_STACK_SIZE 10
@@ -49,6 +50,7 @@ int stackPointer = -1;
 unsigned long lastInputTime = 0;
 
 bool menuRunning = true;
+bool previousMenuState = true;
 
 bool exitLoopFunction = false;
 
@@ -65,6 +67,7 @@ void showMenu()
 
     int maxItems = 4;
     int minItems = 1;
+    int pageNumber = 0;
     int availableHeight = SCREEN_HEIGHT - 20;
     int usedHeight = 0;
     int tmpItemsOnPage = maxItems;
@@ -196,11 +199,6 @@ void initMenu(entryMenu *entryList, int totalMenus, String menuName, int textSiz
     showMenu();
 }
 
-void updateLastInputTime()
-{
-    lastInputTime = millis();
-}
-
 static bool timerActive = false; // Track if the timer is active
 
 enum IdleState
@@ -211,7 +209,6 @@ enum IdleState
 
 IdleState currentState = IDLE;
 unsigned long lastAnimationTime = 0;
-const unsigned long animationInterval = 1; // Adjust as needed
 bool idleEnabled = true;
 
 void startIdleAnimation()
@@ -228,15 +225,12 @@ void startIdleAnimation()
 
         if (currentState == ANIMATING)
         {
-            if (millis() - lastAnimationTime >= animationInterval)
-            {
-                showMainPage();
-                lastAnimationTime = millis();
-            }
-
+            showMainPage();
             if (useAllButtons() != None)
             {
-                updateLastInputTime();
+                useButton();
+                showMenu();
+                lastInputTime = millis();
                 currentState = IDLE;
             }
         }
@@ -248,8 +242,6 @@ void exitSubmenu()
     if (data.isSubmenu && stackPointer >= 0)
     {
         stackPointer--;
-        data.currentButton = 0;
-
         if (stackPointer >= 0)
         {
             Submenu *prevSubmenu = menuStack[stackPointer];
@@ -257,14 +249,15 @@ void exitSubmenu()
             data.submenuCount = prevSubmenu->count;
             data.menuName = prevSubmenu->name;
             data.isSubmenu = true;
+            data.currentButton = prevSubmenu->lastSelectedIndex;
         }
         else
         {
             data.currentSubmenu = nullptr;
             data.menuName = "Main Menu";
             data.isSubmenu = false;
+            data.currentButton = mainMenuLastSelectedIndex;
         }
-
         showMenu();
         Serial.println("Exited submenu, now in: " + data.menuName);
     }
@@ -277,12 +270,19 @@ void exitSubmenu()
         lastInputTime = millis();
         lastInputTime = lastInputTime - 10001111;
         currentState = IDLE;
+        menuRunning = false;
+        previousMenuState = false;
         startIdleAnimation();
     }
 }
 
 void pushSubmenu(Submenu *submenu)
 {
+    if (stackPointer >= 0)
+        menuStack[stackPointer]->lastSelectedIndex = data.currentButton;
+    else
+        mainMenuLastSelectedIndex = data.currentButton;
+
     if (stackPointer < 9)
     {
         stackPointer++;
@@ -314,14 +314,12 @@ void runLoopFunction(void (*loopFunction)())
 
     while (true)
     {
+        delay(5);
         loopFunction();
-
         if (exitLoopFunction == true)
         {
             break;
         }
-
-        delay(10);
     }
     showMenu();
 }
@@ -386,34 +384,34 @@ void handleConfirm()
 
 void loopMenu()
 {
-
-    // If no button is pressed, check for idle timeout
-    if (!(useAllButtons() != None))
+    if (useAllButtons() == None)
     {
-        // No button is pressed, check for idle timeout
         if (!timerActive)
         {
-            lastInputTime = millis(); // Start the timer
+            lastInputTime = millis();
             timerActive = true;
         }
         else
         {
-            // If the timer is active, check the elapsed time
             if (millis() - lastInputTime >= MENU_TIMEOUT)
             {
-                // Call startIdleAnimation continuously after 10 seconds of inactivity
                 startIdleAnimation();
                 menuRunning = false;
+                previousMenuState = false;
             }
         }
     }
     else
     {
-        // If any button is pressed, reset the timer and show the menu
-        lastInputTime = millis(); // Reset the last input time
-        timerActive = false;      // Stop the timer
+        lastInputTime = millis();
+        timerActive = false;
         menuRunning = true;
-        showMenu(); // Show the menu
+        showMenu();
+        if (menuRunning == true && previousMenuState == false)
+        {
+            useButton();
+            previousMenuState = true;
+        }
     }
 
     switch (useButton())
@@ -421,23 +419,23 @@ void loopMenu()
     case Up:
         data.currentButton = max(data.currentButton - 1, 0);
         showMenu();
-        lastInputTime = millis(); // Reset last input time
-        timerActive = false;      // Stop the timer
+        lastInputTime = millis();
+        timerActive = false;
         break;
     case Down:
         data.currentButton = min(data.currentButton + 1, (data.isSubmenu ? data.submenuCount - 1 : data.totalMenus - 1));
         showMenu();
-        lastInputTime = millis(); // Reset last input time
-        timerActive = false;      // Stop the timer
+        lastInputTime = millis();
+        timerActive = false;
         break;
     case Menu:
         handleConfirm();
-        lastInputTime = millis(); // Reset last input time
-        timerActive = false;      // Stop the timer
+        lastInputTime = millis();
+        timerActive = false;
         break;
     case Back:
-        timerActive = false;      // Stop the timer
-        lastInputTime = millis(); // Reset last input time
+        timerActive = false;
+        lastInputTime = millis();
         exitSubmenu();
         break;
     default:
@@ -514,10 +512,7 @@ void resetToDefaultMenu()
     data.currentSubmenu = nullptr;
     data.currentButton = 0;
     currentMenuItem = 0;
-    pageNumber = 0;
-    currentPage = 0;
     data.menuName = "Main Menu";
-    showMenu();
 }
 
 void editCurrentMenuEntry(String newText, void (*newFunction)() = nullptr, void (*newLoopFunction)() = nullptr)
@@ -594,8 +589,6 @@ Submenu *createAlarmsMenu()
 
 Submenu *alarmsSubmenu = createAlarmsMenu();
 
-bool AlarmMenuUpdate = true;
-
 String getAlarmEntryName(int index)
 {
     String days;
@@ -612,14 +605,16 @@ String getAlarmEntryName(int index)
     String name = String(index) + " " + String(alarms[index].enabled ? "On" : "Off") + " " + formatWithLeadingZero(alarms[index].hours) + ":" + formatWithLeadingZero(alarms[index].minutes) + " " + days;
     return name;
 }
-
+bool AlarmMenuUpdate = true;
 uint8_t alarmCurrentState = 0;
 bool isEditingAlarm = false;
 bool inDaySelectionMode = false;
 
-void initManageAlarm() {
+void initManageAlarm()
+{
     alarmCurrentState = 0;
     isEditingAlarm = false;
+    AlarmMenuUpdate = true;
     inDaySelectionMode = false;
     inkButtonStates btn = useButton();
 }
@@ -627,6 +622,7 @@ void initManageAlarm() {
 void manageAlarms()
 {
     uint8_t alarmIndex = alarmsSubmenu->entries[data.currentButton].text.toInt();
+    bool exitAlarm = false;
 
     static unsigned long lastRepeatTime = 0;
     const unsigned long repeatInterval = 150;
@@ -727,7 +723,7 @@ void manageAlarms()
                 startX += labelWidth + 5;
             }
             if (alarmCurrentState == 3)
-                display.drawRect(0, 34, SCREEN_WIDTH-1, 16, WHITE);
+                display.drawRect(0, 34, SCREEN_WIDTH - 1, 16, WHITE);
         }
 
         display.setTextColor(WHITE, BLACK);
@@ -857,15 +853,17 @@ void manageAlarms()
         {
             inDaySelectionMode = false;
             alarmCurrentState = 0;
+            AlarmMenuUpdate = true;
         }
         else if (isEditingAlarm)
+        {
             isEditingAlarm = false;
+            AlarmMenuUpdate = true;
+        }
         else
         {
-            exitLoopFunction = true;
-            editCurrentMenuEntry(getAlarmEntryName(alarmIndex));
+            exitAlarm = true;
         }
-        AlarmMenuUpdate = true;
         break;
 
     default:
@@ -878,9 +876,18 @@ void manageAlarms()
         redrawDisplay();
     }
 
-    if (shouldExitLoop() && data.currentButton != 0)
+    if (useAllButtons() != None)
     {
-        AlarmMenuUpdate = true;
+        lastInputTime = millis();
+    }
+    if (millis() - lastInputTime > LOOP_FUNCTION_TIMEOUT_MS)
+    {
+        exitAlarm = true;
+    }
+
+    if (exitAlarm == true && data.currentButton != 0)
+    {
+        AlarmMenuUpdate = false;
         exitLoopFunction = true;
         editCurrentMenuEntry(getAlarmEntryName(alarmIndex));
     }
@@ -902,8 +909,9 @@ void addNewAlarm()
     {
         if (!alarms[i].exists)
         {
-            alarms[i] = { // lets not have random data there
-                true,                                      // exists
+            alarms[i] = {
+                // lets not have random data there
+                true,                                       // exists
                 false,                                      // enabled
                 {true, true, true, true, true, true, true}, // days
                 0,                                          // hours
@@ -1068,7 +1076,7 @@ void initMenus()
         {"Disable All Alarms", disableAlarmsIn, nullptr, nullptr, nullptr},
         {"Enable All Alarms", enableAlarmsIn, nullptr, nullptr, nullptr},
         {"Refresh Alarms", refreshAlarmsSubmenu, nullptr, nullptr, nullptr},
-        {"Alarms Flash Read", refreshAlarmsSubmenu, nullptr, nullptr, nullptr},
+        {"Alarms Flash Read", readAlarmsIn, nullptr, nullptr, nullptr},
     };
     Submenu *manageAlarmsSubmenu = new Submenu{"Alarm Ctrl", manageAlarmsItems, 5, 5};
 

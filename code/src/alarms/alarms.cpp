@@ -61,10 +61,20 @@ void checkAlarms()
 
 void checkAlarmsTask(void *pvParameters)
 {
+  int previousHour = hour();
+  int previousMinute = minute();
   while (true)
   {
-    checkAlarms();
-    vTaskDelay(pdMS_TO_TICKS(45 * 1000));
+    int currentHour = hour();
+    int currentMinute = minute();
+
+    if (currentHour != previousHour || currentMinute != previousMinute)
+    {
+      previousHour = currentHour;
+      previousMinute = currentMinute;
+      checkAlarms();
+    }
+    vTaskDelay(pdMS_TO_TICKS(30 * 1000));
   }
 }
 
@@ -119,22 +129,20 @@ void createRiningingTask()
       "ringAlarm", // Name of the task
       2048,        // Stack size (words)
       NULL,        // Parameter to pass
-      2,           // Priority
+      4,           // Priority
       &Alarm,      // Task handle
-      0            // Core to run the task on (Core 0)
+      1            // Core to run the task on (Core 0)
   );
 }
 
-static unsigned long alarmStartTime = 0;
-
-void touchStopAlarm(int hour, bool ringOn, bool lightOn)
+void touchStopAlarm(int hour, bool ringOn, bool lightOn, unsigned long startTime)
 {
-  if (readHallSwitch() == true || (millis() - alarmStartTime >= 30 * 60 * 1000))
+  if (readHallSwitch() == true || (millis() - startTime >= 30 * 60 * 1000))
   {
-    if ((!(hour >= 11 && hour <= 21) || ringOn == false) && lightOn == true)
+    if (lightOn == true)
     {
       Serial.println("stopping alarm");
-      if (lightOn && WiFi.status() == WL_CONNECTED)
+      if (WiFi.status() == WL_CONNECTED)
       {
         vTaskDelay(pdMS_TO_TICKS(5 * 60 * 1000));
         sendOffPostRequest();
@@ -142,6 +150,24 @@ void touchStopAlarm(int hour, bool ringOn, bool lightOn)
     }
     ringing = false;
     vTaskDelete(Alarm);
+  }
+}
+
+struct Melody
+{
+  const int *notes;
+  const int *durations;
+  int length;
+};
+
+void playMelody(const Melody &m)
+{
+  for (int i = 0; i < m.length; i++)
+  {
+    int duration = 1000 / m.durations[i];
+    tone(BUZZER_PIN, m.notes[i], duration);
+    delay(duration * 1.3);
+    noTone(BUZZER_PIN);
   }
 }
 
@@ -154,32 +180,39 @@ void ringAlarm(void *parameter)
   int currentHour = hour();
   int currentMinute = minute();
 
-  int alarmMelody[] = {NOTE_C7, NOTE_C7, NOTE_B7, NOTE_B7, NOTE_B7, NOTE_B7, NOTE_G6, NOTE_G6};
+  int alarmMelody[] = {NOTE_C5, NOTE_C5, NOTE_B4, NOTE_B4, NOTE_B4, NOTE_B4, NOTE_G4, NOTE_G4};
   int alarmDurations[] = {8, 8, 8, 12, 12, 12, 8, 8};
-  alarmStartTime = millis();
+  int SecAlarmMelody[] = {NOTE_C3, NOTE_C3, NOTE_B2, NOTE_B2, NOTE_B2, NOTE_B2, NOTE_G2, NOTE_G2};
+  int SecAlarmDurations[] = {4, 4, 4, 8, 8, 8, 4, 4};
 
-  if ((!(currentHour >= 11 && currentHour <= 21) || ringOn == false) && lightOn == true)
+  Melody melody1 = {alarmMelody, alarmDurations, sizeof(alarmMelody) / sizeof(int)};
+  Melody melody2 = {SecAlarmMelody, SecAlarmDurations, sizeof(SecAlarmMelody) / sizeof(int)};
+  if (lightOn == true && WiFi.status() == WL_CONNECTED)
   {
     sendOnPostRequest();
   }
   Serial.println("Starting Alarm");
 
   unsigned long lastToggleRequestTime = startTime;
+  bool alarmDetectInput = false;
 
   while (true)
   {
+    if (alarmDetectInput == false)
+    {
+      alarmDetectInput = (useAllTouch() != No_Seg);
+    }
     if ((millis() - startTime >= 15000 || WiFi.SSID() != SSID1 || WiFi.status() != WL_CONNECTED || (currentHour >= 11 && currentHour <= 21)) && ringOn == true)
     {
-      Serial.println("ringin Alarm");
-
-      for (int i = 0; i < sizeof(alarmMelody) / sizeof(alarmMelody[0]); i++)
+      if (alarmDetectInput == false)
       {
-        tone(BUZZER_PIN, alarmMelody[i], 1000 / alarmDurations[i]);
-        delay(1000 / alarmDurations[i] * 1.30);
-        noTone(BUZZER_PIN);
+        playMelody(melody1);
+      }
+      else
+      {
+        playMelody(melody2);
       }
     }
-
     if (millis() - startTime >= 900000)
     {
       if (millis() - lastToggleRequestTime >= 10000)
@@ -189,8 +222,8 @@ void ringAlarm(void *parameter)
       }
     }
 
-    touchStopAlarm(currentHour, ringOn, lightOn);
-    vTaskDelay(pdMS_TO_TICKS(10));
+    touchStopAlarm(currentHour, ringOn, lightOn, startTime);
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 

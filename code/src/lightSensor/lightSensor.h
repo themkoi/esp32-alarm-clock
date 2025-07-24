@@ -4,6 +4,7 @@
 #include "../defines.h"
 
 void createDimmingTask();
+void createLightTask();
 
 void dimLedDisplay();
 

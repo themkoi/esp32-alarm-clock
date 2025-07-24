@@ -16,6 +16,39 @@ bool inputDetected = false;
 TaskHandle_t dimmingTaskHandle;
 TaskHandle_t oledWakeupTaskHandle;
 
+void lightTask(void *pvParameters)
+{
+    unsigned long previousMillisChart = 0;
+    while (true)
+    {
+        unsigned long currentMillis = millis(); // Get the current time
+        if (currentMillis - previousMillisChart >= INTERVAL_CHARTS)
+        {
+            lightLevel = getLightLevel();
+            for (int i = 0; i < CHART_READINGS - 1; i++)
+            {
+                lightArray[i] = lightArray[i + 1];
+            }
+            lightArray[CHART_READINGS - 1] = lightLevel;
+            previousMillisChart = currentMillis;
+        }
+        vTaskDelay(pdMS_TO_TICKS(600000));
+    }
+}
+
+void createLightTask()
+{
+    xTaskCreatePinnedToCore(
+        lightTask,   /* Task function. */
+        "lightTask", /* String with name of task. */
+        2048,        /* Stack size in words. */
+        NULL,        /* Parameter passed as input of the task */
+        1,           /* Priority of the task. */
+        NULL,        /* Task handle. */
+        1            /* Core where the task should run. */
+    );
+}
+
 void createDimmingTask()
 {
     for (int i = 0; i < CHART_READINGS; i++)
@@ -69,8 +102,8 @@ void oledWakeupTask(void *pvParameters)
 
             if (manager.dimmed)
             {
-                delay(5);
                 manager.sendOledAction(OLED_FADE_IN);
+                delay(5);
             }
             inputDetected = false;
 
@@ -120,11 +153,10 @@ void oledWakeupTask(void *pvParameters)
 
 void dimmingTask(void *pvParameters)
 {
-    unsigned long previousMillisChart = 0;
-    unsigned long previousMillisLight = 0;
-
     unsigned long previousMillisDimming = 0;
     unsigned long intervalDimming = 1000;
+
+    unsigned long previousMillisLight = 0;
 
     unsigned long previousMillisState = 0;
     unsigned long intervalState = 30000;
@@ -133,17 +165,6 @@ void dimmingTask(void *pvParameters)
     {
         dimmingTaskRunning = true;
         unsigned long currentMillis = millis();
-
-        if (currentMillis - previousMillisChart >= INTERVAL_CHARTS)
-        {
-            lightLevel = getLightLevel();
-            for (int i = 0; i < CHART_READINGS - 1; i++)
-            {
-                lightArray[i] = lightArray[i + 1];
-            }
-            lightArray[CHART_READINGS - 1] = lightLevel;
-            previousMillisChart = currentMillis;
-        }
 
         if (currentMillis - previousMillisLight >= intervalDimming)
         {

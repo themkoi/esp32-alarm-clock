@@ -1,7 +1,5 @@
 #include "defines.h"
 
-timeval tv;
-
 void setup()
 {
   initHardware();
@@ -16,6 +14,7 @@ void setup()
   initMenus();
   createBatteryTask();
   createTempTask();
+  createLightTask();
   createTimeTask();
 }
 
