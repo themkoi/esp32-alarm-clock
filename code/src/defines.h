@@ -115,6 +115,7 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 #define LOOP_FUNCTION_TIMEOUT_MS 120000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
 #define MENU_TIMEOUT 60000 // How fast to go to main page without any input
 
+#define MAX_STACK_SIZE 1 // Max depth of submenus not counting in main menu and starting from 0
 #define MAX_MENU_ITEMS 30 // Max menus change this too if you increase alarm number-- yeah you have to or theres a panic so yay
 #define MAX_ALARMS 30 // Max number of alarms
 
@@ -167,8 +168,9 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 #include "lightSensor/lightSensor.h"
 #include "oledDisplay/interface.h"
 #include "oledDisplay/mainPage.h"
-#include "oledDisplay/charts.h"
-#include "oledDisplay/menus.h"
+#include "oledDisplay/menus/alarmMenu.h"
+#include "oledDisplay/menus/charts.h"
+#include "oledDisplay/menus/menus.h"
 #include "Flash/Flash.h"
 #include "alarms/alarms.h"
 #include "battery/battery.h"

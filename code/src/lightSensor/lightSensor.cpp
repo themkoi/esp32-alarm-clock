@@ -390,10 +390,10 @@ int getMmwaveState()
 
     if (state)
     {
-        Serial.println("Detected");
+        Serial.println("Detected mmWave");
         return 1;
     }
 
-    Serial.println("Not Detected");
+    Serial.println("Not Detected mmWave");
     return 0;
 }

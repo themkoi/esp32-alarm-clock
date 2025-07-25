@@ -1,7 +1,7 @@
 #ifndef CHARTS_H
 #define CHARTS_H
 
-#include "../defines.h"
+#include "../../defines.h"
 
 void loopTempGraph();
 void initTempGraph();

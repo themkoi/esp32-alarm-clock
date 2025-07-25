@@ -5,5 +5,6 @@
 #include <ArduinoOTA.h>
 
 void checkForRunOta();
+void startOTA();
 
 #endif

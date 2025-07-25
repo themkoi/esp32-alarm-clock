@@ -1,7 +1,7 @@
 #ifndef MENUS_H
 #define MENUS_H
 
-#include "defines.h"
+#include "../../defines.h"
 
 void currentWeather();
 void displayWeatherCast(int dayIndex);

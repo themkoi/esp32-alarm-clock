@@ -45,3 +45,9 @@ void checkForRunOta()
         manager.sendOledAction(OLED_DISABLE);
     }
 }
+
+void startOTA()
+{
+    saveOtaValue(true);
+    ESP.restart();
+}
