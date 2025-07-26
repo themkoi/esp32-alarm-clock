@@ -62,8 +62,7 @@ void addNewAlarm()
     {
         if (!alarms[i].exists)
         {
-            alarms[i] = {
-                // lets not have random data there
+            alarms[i] = {               // lets not have random data there
                 true,                                       // exists
                 false,                                      // enabled
                 {true, true, true, true, true, true, true}, // days

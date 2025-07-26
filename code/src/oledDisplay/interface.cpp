@@ -6,9 +6,7 @@
 TaskHandle_t menuTaskHandle;
 
 menuData data = {};
-int currentMenuItem = 0;
 int mainMenuLastSelectedIndex = 0;
-int currentPage = 0;
 
 Submenu *menuStack[MAX_STACK_SIZE];
 int stackPointer = -1;
@@ -20,17 +18,12 @@ bool previousMenuState = true;
 
 bool exitLoopFunction = false;
 
-void resetPreviousItems()
-{
-    display.clearDisplay();
-}
-
 void showMenu()
 {
     display.setFont(&DejaVu_LGC_Sans_Bold_10);
     display.clearDisplay();
     display.setTextSize(data.textSize);
-
+    int currentPage = 0;
     int maxItems = 4;
     int minItems = 1;
     int pageNumber = 0;
@@ -165,7 +158,7 @@ void initMenu(entryMenu *entryList, int totalMenus, String menuName, int textSiz
     showMenu();
 }
 
-static bool timerActive = false; // Track if the timer is active
+static bool timerActive = false;
 
 enum IdleState
 {
@@ -183,9 +176,9 @@ void startIdleAnimation()
     {
         if (currentState == IDLE && millis() - lastInputTime > MENU_TIMEOUT)
         {
+            resetToDefaultMenu();
             currentState = ANIMATING;
             Serial.println("Main Page started...");
-            resetToDefaultMenu();
             lastAnimationTime = millis();
         }
 
@@ -194,6 +187,7 @@ void startIdleAnimation()
             showMainPage();
             if (useAllButtons() != None)
             {
+                resetToDefaultMenu();
                 useButton();
                 showMenu();
                 lastInputTime = millis();
@@ -354,6 +348,7 @@ void loopMenu()
     {
         if (!timerActive)
         {
+            useTouch();
             lastInputTime = millis();
             timerActive = true;
         }
@@ -361,6 +356,10 @@ void loopMenu()
         {
             if (millis() - lastInputTime >= MENU_TIMEOUT)
             {
+                if (previousMenuState == true)
+                {
+                    resetToDefaultMenu();
+                }
                 startIdleAnimation();
                 menuRunning = false;
                 previousMenuState = false;
@@ -380,32 +379,36 @@ void loopMenu()
         }
     }
 
-    switch (useButton())
+    if (menuRunning == true)
     {
-    case Up:
-        data.currentButton = max(data.currentButton - 1, 0);
-        showMenu();
-        lastInputTime = millis();
-        timerActive = false;
-        break;
-    case Down:
-        data.currentButton = min(data.currentButton + 1, (data.isSubmenu ? data.submenuCount - 1 : data.totalMenus - 1));
-        showMenu();
-        lastInputTime = millis();
-        timerActive = false;
-        break;
-    case Menu:
-        handleConfirm();
-        lastInputTime = millis();
-        timerActive = false;
-        break;
-    case Back:
-        timerActive = false;
-        lastInputTime = millis();
-        exitSubmenu();
-        break;
-    default:
-        break;
+        useTouch();
+        switch (useButton())
+        {
+        case Up:
+            data.currentButton = max(data.currentButton - 1, 0);
+            showMenu();
+            lastInputTime = millis();
+            timerActive = false;
+            break;
+        case Down:
+            data.currentButton = min(data.currentButton + 1, (data.isSubmenu ? data.submenuCount - 1 : data.totalMenus - 1));
+            showMenu();
+            lastInputTime = millis();
+            timerActive = false;
+            break;
+        case Menu:
+            handleConfirm();
+            lastInputTime = millis();
+            timerActive = false;
+            break;
+        case Back:
+            timerActive = false;
+            lastInputTime = millis();
+            exitSubmenu();
+            break;
+        default:
+            break;
+        }
     }
 }
 
@@ -415,7 +418,6 @@ void resetToDefaultMenu()
     data.isSubmenu = false;
     data.currentSubmenu = nullptr;
     data.currentButton = 0;
-    currentMenuItem = 0;
     data.menuName = "Main Menu";
 }
 

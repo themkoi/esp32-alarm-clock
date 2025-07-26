@@ -112,7 +112,7 @@ Supported country codes are "01"(world safe mode) "AT","AU","BE","BG","BR", "CA"
 #define TOUCH_5_Seg_THRESHOLD_SLEEP 40
 
 // Menus
-#define LOOP_FUNCTION_TIMEOUT_MS 120000 // how fast to exit from loop activated in menu this only works if the loop is calling shouldExitLoop()
+#define LOOP_FUNCTION_TIMEOUT_MS 120000 // how fast to exit from the loop function in menu this only works if the loop is calling shouldExitLoop()
 #define MENU_TIMEOUT 60000 // How fast to go to main page without any input
 
 #define MAX_STACK_SIZE 1 // Max depth of submenus not counting in main menu and starting from 0
