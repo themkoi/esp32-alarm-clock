@@ -55,6 +55,47 @@ const unsigned long cycleInterneval = 1000;
 static bool lastTouched = false;
 static bool pressLocked = false;
 
+// Frame transition support: a snapshot of what was on screen before the
+// current page/screensaver was rendered, plus bookkeeping so the transition
+// only runs when the content source actually changes (not on every
+// per-second re-render of the same page).
+static uint8_t prevFrameBuffer[OLED_FRAME_BYTES];
+static int lastTransitionedSource = -1; // 0 = screensaver, 1..6 = page, -1 = none yet
+static bool screensaverEntryTransitionPending = false;
+
+static void snapshotPreviousFrame()
+{
+    oledMana.snapshotFrame(prevFrameBuffer);
+}
+
+static void renderWeatherPage()
+{
+    currentWeather();
+    drawPageIndicator(112, 22);
+}
+
+static void renderPageSource(bool sourceChanged, void (*renderPage)())
+{
+    if (sourceChanged)
+    {
+        snapshotPreviousFrame();
+        oledMana.suppressDisplay(true);
+    }
+
+    renderPage();
+
+    if (sourceChanged)
+    {
+        oledMana.startTransition(prevFrameBuffer, oled.getBuffer());
+        oledMana.suppressDisplay(false);
+        lastTransitionedSource = PageNumberToShow;
+    }
+    else
+    {
+        oledMana.display();
+    }
+}
+
 void drawPageIndicator(int startX, int startY)
 {
     oled.setFont(&Roboto_Black_9);
@@ -209,31 +250,38 @@ void showMainPage()
             PageNumberToShow = 0;
             previousMillisMenu = millis() - intervalMenu;
             Serial.println("resetting menus");
+            snapshotPreviousFrame();
+            screensaverEntryTransitionPending = true;
+            lastTransitionedSource = 0;
             setupScreensaver();
         }
         else
         {
+            bool sourceChanged = (PageNumberToShow != lastTransitionedSource);
+
             switch (PageNumberToShow)
             {
             case 1:
                 if (currentTime - previousMillisMenu >= intervalMenu)
                 {
                     previousMillisMenu = currentTime;
-                    showFirstPage();
+                    renderPageSource(sourceChanged, showFirstPage);
                 }
                 break;
 
             case 2:
-                currentWeather();
-                drawPageIndicator(112, 22);
-                oledMana.display();
+                if (currentTime - previousMillisMenu >= intervalMenu)
+                {
+                    previousMillisMenu = currentTime;
+                    renderPageSource(sourceChanged, renderWeatherPage);
+                }
                 break;
 
             case 3:
                 if (currentTime - previousMillisMenu >= intervalMenu)
                 {
                     previousMillisMenu = currentTime;
-                    showForecastPage();
+                    renderPageSource(sourceChanged, showForecastPage);
                 }
                 break;
 
@@ -241,7 +289,7 @@ void showMainPage()
                 if (currentTime - previousMillisMenu >= intervalMenu)
                 {
                     previousMillisMenu = currentTime;
-                    showInfoPage();
+                    renderPageSource(sourceChanged, showInfoPage);
                 }
                 break;
 
@@ -249,14 +297,14 @@ void showMainPage()
                 if (currentTime - previousMillisMenu >= intervalMenu)
                 {
                     previousMillisMenu = currentTime;
-                    showEnvSensorPage();
+                    renderPageSource(sourceChanged, showEnvSensorPage);
                 }
                 break;
             case 6:
                 if (currentTime - previousMillisMenu >= intervalMenu)
                 {
                     previousMillisMenu = currentTime;
-                    showOptSensorPage();
+                    renderPageSource(sourceChanged, showOptSensorPage);
                 }
                 break;
 
@@ -845,5 +893,14 @@ void showScreensaver()
     {
         qsort(flyer, N_FLYERS, sizeof(struct Flyer), compare);
     }
-    oledMana.display();
+
+    if (screensaverEntryTransitionPending)
+    {
+        screensaverEntryTransitionPending = false;
+        oledMana.startTransition(prevFrameBuffer, oled.getBuffer());
+    }
+    else
+    {
+        oledMana.display();
+    }
 }
