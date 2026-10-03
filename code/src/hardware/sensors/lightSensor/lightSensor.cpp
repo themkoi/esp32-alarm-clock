@@ -98,7 +98,7 @@ void oledWakeupTask(void *pvParameters)
             Serial.print("lock mutex");
             showCurrentTime();
 
-            if (currentWeatherData.isDay == false)
+            if (checkForNight())
             {
                 setLedIntensity(LED_BRIGHTNESS_MAX_NIGHT);
             }
@@ -252,7 +252,7 @@ static int ledLastBrightness = LED_BRIGHTNESS_MIN;
 
 int mapLedWithHysteresis(uint16_t lightLevel)
 {
-    uint8_t maxBright = currentWeatherData.isDay
+    uint8_t maxBright = !checkForNight()
                             ? LED_BRIGHTNESS_MAX
                             : LED_BRIGHTNESS_MAX_NIGHT;
 

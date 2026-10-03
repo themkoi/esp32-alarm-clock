@@ -25,6 +25,7 @@
 #include "esp_pm.h"
 #include "esp_wifi.h"
 
+#include "../icons/generated_icons/icons_16x16.h"
 #include "../icons/generated_icons/icons_18x18.h"
 #include "../icons/generated_icons/icons_24x24.h"
 #include "../icons/generated_icons/icons_32x32.h"
@@ -69,7 +70,7 @@
 
 #define MIN_CONTRAST 80
 #define MAX_CONTRAST 255
-#define MIN_CONTRAST_NIGHT 40
+#define MIN_CONTRAST_NIGHT 50
 #define MAX_CONTRAST_NIGHT 150
 
 #define OLED_RESET -1

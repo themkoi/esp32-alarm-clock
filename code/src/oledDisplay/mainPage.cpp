@@ -461,30 +461,30 @@ void displayWiFiSignal(int x, int y)
 
     if (WiFi.status() != WL_CONNECTED)
     {
-        wifiIcon = wifi_slash_duotone_48x48;
+        wifiIcon = wifi_slash_24x24;
     }
     else if (rssi >= -50)
     {
-        wifiIcon = wifi_high_duotone_48x48;
+        wifiIcon = wifi_high_24x24;
     }
     else if (rssi >= -60)
     {
-        wifiIcon = wifi_medium_duotone_48x48;
+        wifiIcon = wifi_medium_24x24;
     }
     else if (rssi >= -70)
     {
-        wifiIcon = wifi_low_duotone_48x48;
+        wifiIcon = wifi_low_24x24;
     }
     else if (rssi >= -80)
     {
-        wifiIcon = wifi_none_duotone_48x48;
+        wifiIcon = wifi_none_24x24;
     }
     else
     {
-        wifiIcon = wifi_x_duotone_48x48;
+        wifiIcon = wifi_x_24x24;
     }
 
-    oled.drawGrayscaleBitmap(x, y, wifiIcon, 16, 16);
+    oled.drawGrayscaleBitmap(x, y, wifiIcon, 24, 24);
 }
 
 void showInfoPage()
@@ -502,11 +502,11 @@ void showInfoPage()
 
     if (charging == true)
     {
-        oled.drawGrayscaleBitmap(4, 16, battery_charging_duotone_24x24, 24, 24);
+        oled.drawGrayscaleBitmap(4, 16, battery_charging_24x24, 24, 24);
     }
     else
     {
-        oled.drawGrayscaleBitmap(4, 16, battery_empty_duotone_24x24, 24, 24);
+        oled.drawGrayscaleBitmap(4, 16, battery_empty_24x24, 24, 24);
         oled.fillRect(8, 25, map(getBatteryPercentage(), 0, 100, 0, 14), 6, SSD1327_WHITE);
     }
 
@@ -536,7 +536,7 @@ void showInfoPage()
 
     oled.drawLine(0, 42, 127, 42, 6);
 
-    displayWiFiSignal(4, 46);
+    displayWiFiSignal(4, 43);
 
     oled.setTextColor(SSD1327_WHITE);
     oled.setFont(&DejaVu_LGC_Sans_Bold_9);
@@ -554,8 +554,10 @@ void showInfoPage()
     oled.setCursor(2, 77);
     oled.print("Signal: ");
     int rssi = WiFi.RSSI();
-    int percent = (rssi <= -100) ? 0 : (rssi >= -50) ? 100
-                                                     : 2 * (rssi + 100);
+    int percent = constrain(
+        (int)(100.0f * powf((rssi + 90.0f) / 40.0f, 1.5f)),
+        0,
+        100);
 
     oled.setTextColor(12);
     oled.print(percent);
@@ -620,7 +622,7 @@ void showEnvSensorPage()
     oled.setTextColor(6);
     oled.print("°C");
 
-    oled.drawGrayscaleBitmap(110, ySens1Temp - 11, thermometer_cold_duotone_24x24, 16, 16);
+    oled.drawGrayscaleBitmap(110, ySens1Temp - 18, thermometer_16x16, 16, 16);
 
     int ySens1Hum = 48;
     oled.setCursor(2, ySens1Hum);
@@ -631,7 +633,7 @@ void showEnvSensorPage()
     oled.setTextColor(6);
     oled.print("%");
 
-    oled.drawGrayscaleBitmap(110, ySens1Hum - 11, drop_simple_duotone_24x24, 16, 16);
+    oled.drawGrayscaleBitmap(110, ySens1Hum - 12, drop_16x16, 16, 16);
 
     oled.drawLine(0, 54, 127, 54, 6);
 
@@ -648,7 +650,7 @@ void showEnvSensorPage()
     oled.setTextColor(6);
     oled.print("hPa");
 
-    oled.drawGrayscaleBitmap(110, yPress - 11, drop_simple_duotone_24x24, 16, 16);
+    oled.drawGrayscaleBitmap(110, yPress - 11, gauge_16x16, 16, 16);
 
     int yAlt = 88;
     oled.setCursor(2, yAlt);
@@ -659,7 +661,7 @@ void showEnvSensorPage()
     oled.setTextColor(6);
     oled.print("m");
 
-    oled.drawGrayscaleBitmap(110, yAlt - 11, drop_simple_duotone_24x24, 16, 16);
+    oled.drawGrayscaleBitmap(110, yAlt - 11, altitude_16x16, 16, 16);
 
     int yBmpTemp = 100;
     oled.setCursor(2, yBmpTemp);
@@ -670,7 +672,7 @@ void showEnvSensorPage()
     oled.setTextColor(6);
     oled.print("°C");
 
-    oled.drawGrayscaleBitmap(110, yBmpTemp - 11, thermometer_hot_duotone_24x24, 16, 16);
+    oled.drawGrayscaleBitmap(110, yBmpTemp - 8, thermometer_16x16, 16, 16);
 
     oled.setTextColor(SSD1327_WHITE);
     delay(10);
@@ -709,7 +711,7 @@ void showOptSensorPage()
     oled.setTextColor(6);
     oled.print("lux");
 
-    oled.drawGrayscaleBitmap(110, yAlsLight - 11, thermometer_cold_duotone_24x24, 16, 16);
+    oled.drawGrayscaleBitmap(110, yAlsLight - 11, light_16x16, 16, 16);
 
     oled.drawLine(0, 42, 127, 42, 6);
 
@@ -733,7 +735,7 @@ void showOptSensorPage()
         oled.print("cm");
     }
 
-    oled.drawGrayscaleBitmap(110, yProx - 11, drop_simple_duotone_24x24, 16, 16);
+    oled.drawGrayscaleBitmap(110, yProx - 11, dist_16x16, 16, 16);
 
     int yColorTemp = 76;
     oled.setCursor(2, yColorTemp);
@@ -743,8 +745,6 @@ void showOptSensorPage()
     oled.print(colorTemp);
     oled.setTextColor(6);
     oled.print("K");
-
-    oled.drawGrayscaleBitmap(110, yColorTemp - 11, thermometer_hot_duotone_24x24, 16, 16);
 
     int yRGB = 88;
     oled.setCursor(2, yRGB);

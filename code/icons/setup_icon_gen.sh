@@ -9,7 +9,6 @@ cd "$TOOLS_DIR"
 
 USVG_URL="https://github.com/linebender/resvg/releases/download/v0.47.0/usvg-linux-x86_64.tar.gz"
 RESVG_URL="https://github.com/linebender/resvg/releases/download/v0.47.0/resvg-linux-x86_64.tar.gz"
-PHOSPHOR_URL="https://phosphoricons.com/assets/phosphor-icons.zip"
 
 
 echo "Downloading usvg..."
@@ -36,10 +35,3 @@ chmod +x usvg resvg
 rm -rf usvg_tmp resvg_tmp usvg.tar.gz resvg.tar.gz
 
 cd ..
-
-echo "Downloading phosphor icons..."
-cd svg_icons
-curl -L "$PHOSPHOR_URL" -o phosphor.zip
-echo "Extracting phosphor icons..."
-unzip -o phosphor.zip -d ./phosphor_icons
-rm phosphor.zip
